@@ -80,19 +80,17 @@
           color: black !important;
         }
         
-        /* --- MODIFIED CODE START --- */
         th, td {
           border: 1px solid #000 !important;
-          padding: 1px 2px !important; /* 셀 여백 감소 */
+          padding: 1px 2px !important; 
           text-align: center !important;
           color: black !important;
           overflow-wrap: break-word;
-          font-size: 7.5pt !important; /* 폰트 크기 미세 조정 */
+          font-size: 7.5pt !important;
         }
-        /* --- MODIFIED CODE END --- */
 
         thead th {
-          background-color: #BFDBFE !important; /* light blue */
+          background-color: #EBF5FF !important; /* 연한 파란색으로 변경 */
           font-weight: bold !important;
         }
       }
@@ -738,7 +736,7 @@
                     <button
                         onClick={handleGenerate}
                         disabled={isGenerateDisabled}
-                        className="w-full max-w-xs flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
+                        className="w-full max-w-xs flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
                     >
                         {isLoading ? (
                             <>
@@ -762,7 +760,7 @@
                             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4">
                                 <button
                                     onClick={handlePrint}
-                                    className="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                                    className="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -777,7 +775,7 @@
                                                 onClick={() => setSelectedClass(className)}
                                                 className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                                                     selectedClass === className
-                                                        ? 'bg-indigo-600 text-white shadow'
+                                                        ? 'bg-green-600 text-white shadow'
                                                         : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
                                                 }`}
                                             >
