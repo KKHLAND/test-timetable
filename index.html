@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>개인별/반별 시험시간표 생성기</title>
+    <title>개인별 시험 시간표 생성기</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -111,6 +111,7 @@
 
         data.forEach(entry => {
           if (!entry.학번 || !entry.이름 || !entry.날짜 || !entry.교시 || !entry.과목) return;
+          if (isNaN(parseInt(entry.교시, 10))) return; // Ensure '교시' is a number
 
           if (!studentSchedules.has(entry.학번)) {
             studentSchedules.set(entry.학번, { name: entry.이름, exams: {} });
@@ -261,10 +262,8 @@
                                           while (i < row.length) {
                                               const cell = row[i];
                                               let colspan = 1;
-                                              if (cell) {
-                                                  while (i + colspan < row.length && !row[i + colspan]) {
-                                                      colspan++;
-                                                  }
+                                              while (i + colspan < row.length && !row[i + colspan]) {
+                                                  colspan++;
                                               }
                                               cells.push(<th key={i} colSpan={colspan} className={headerCellClasses}>{cell}</th>);
                                               i += colspan;
@@ -405,26 +404,35 @@
 
                   const timeSlotSet = new Set();
                   cleanData.forEach(entry => {
-                    if (entry.날짜 && entry.교시) {
+                    if (entry.날짜 && String(entry.교시).trim()) {
                         timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
                     }
                   });
 
-                  const calculatedTimeSlots = Array.from(timeSlotSet).map(s => {
-                    const [date, period] = s.split('|');
-                    return { date, period: parseInt(period, 10) };
-                  }).sort((a, b) => {
-                    const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
-                    const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
-                    if (dateA.getTime() !== dateB.getTime()) {
-                        return dateA.getTime() - dateB.getTime();
-                    }
-                    return a.period - b.period;
-                  });
+                  const calculatedTimeSlots = Array.from(timeSlotSet)
+                    .map(s => {
+                        if (!s || !s.includes('|')) return null;
+                        const [date, periodStr] = s.split('|');
+                        const period = parseInt(periodStr, 10);
+                        if (date && !isNaN(period)) {
+                            return { date, period };
+                        }
+                        return null;
+                    })
+                    .filter(Boolean)
+                    .sort((a, b) => {
+                        const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
+                        const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
+                        if (dateA.getTime() !== dateB.getTime()) {
+                            return dateA.getTime() - dateB.getTime();
+                        }
+                        return a.period - b.period;
+                    });
                   setTimeSlots(calculatedTimeSlots);
 
                   const subjectsBySlot = {};
                   cleanData.forEach(entry => {
+                    if (isNaN(parseInt(entry.교시, 10))) return;
                     const key = `${entry.날짜}|${entry.교시}`;
                     if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
                     subjectsBySlot[key].add(entry.과목);
@@ -750,7 +758,7 @@
                                 </svg>
                                 생성 중...
                             </>
-                        ) : (generatedCsvContent ? '다시 생성하기' : '개인별/반별 시험험시간표 생성')}
+                        ) : (generatedCsvContent ? '다시 생성하기' : '개인별 시간표 생성')}
                     </button>
                 </div>
               </div>
@@ -759,7 +767,7 @@
                   <div id="printable-section">
                       <div className="print-hidden mb-6 text-center">
                             <p className="text-slate-500 dark:text-slate-400 mb-4">
-                                생성된 개인별/반별 시험시간표입니다. 반을 선택하여 보거나 인쇄하세요.
+                                생성된 개인별 시간표입니다. 반을 선택하여 보거나 인쇄하세요.
                             </p>
                             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4">
                                 <button
@@ -793,7 +801,7 @@
                       <Card className="print-card">
                           <div className="relative mb-4 print-header-container">
                               <h2 className="text-center text-2xl font-bold pt-2 text-slate-800 dark:text-slate-100">
-                                  {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 시험시간표`}
+                                  {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 시험 시간표`}
                               </h2>
                               {logoSrc && (
                                   <img
@@ -825,5 +833,3 @@
     </script>
 </body>
 </html>
-
-
