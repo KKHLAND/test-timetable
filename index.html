@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>개인별 시험 시간표 생성기</title>
+    <title>개인별/반별 시험시간표 생성기</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -598,8 +598,8 @@
             <main className="w-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
               <div className="print-hidden">
                 <div className="text-center p-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white">개인별 시험 시간표 생성기</h1>
-                    <p className="mt-2 text-lg text-indigo-200">CSV 파일을 업로드하여 학생별 시험 시간표를 손쉽게 만드세요.</p>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white">개인별/반별 시험시간표 생성기</h1>
+                    <p className="mt-2 text-lg text-indigo-200">CSV 파일을 업로드하여 개인별/반별 시험시간표를 만들어보보세요.</p>
                 </div>
 
                 {error && (
@@ -750,7 +750,7 @@
                                 </svg>
                                 생성 중...
                             </>
-                        ) : (generatedCsvContent ? '다시 생성하기' : '개인별 시간표 생성')}
+                        ) : (generatedCsvContent ? '다시 생성하기' : '개인별/반별 시험험시간표 생성')}
                     </button>
                 </div>
               </div>
@@ -759,7 +759,7 @@
                   <div id="printable-section">
                       <div className="print-hidden mb-6 text-center">
                             <p className="text-slate-500 dark:text-slate-400 mb-4">
-                                생성된 개인별 시간표입니다. 반을 선택하여 보거나 인쇄하세요.
+                                생성된 개인별/반별 시험시간표입니다. 반을 선택하여 보거나 인쇄하세요.
                             </p>
                             <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4">
                                 <button
@@ -793,7 +793,7 @@
                       <Card className="print-card">
                           <div className="relative mb-4 print-header-container">
                               <h2 className="text-center text-2xl font-bold pt-2 text-slate-800 dark:text-slate-100">
-                                  {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 시험 시간표`}
+                                  {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 시험시간표`}
                               </h2>
                               {logoSrc && (
                                   <img
@@ -825,3 +825,4 @@
     </script>
 </body>
 </html>
+
