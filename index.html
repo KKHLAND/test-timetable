@@ -697,7 +697,7 @@
                             {file ? (
                                 <p className="text-sm text-green-600 dark:text-green-400 font-semibold pt-2">{file.name}</p>
                             ) : (
-                                <p className="text-xs text-slate-500 dark:text-slate-500">CSV 파일만 가능</p>
+                                <p className="text-xs text-red-500 dark:text-red-400">업로드할 파일은 CSV (UTF-8) 형식이어야 합니다.</p>
                             )}
                         </div>
                         <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv" onChange={handleFileChange} />
