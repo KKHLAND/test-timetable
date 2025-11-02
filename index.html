@@ -6,6 +6,7 @@
     <title>개인별 시험 시간표 생성기</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -366,9 +367,13 @@
 
         const processFile = useCallback(async (selectedFile) => {
           if (!selectedFile) return;
-            
-          if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-              setError('잘못된 파일 형식입니다. CSV 파일을 업로드해주세요.');
+          
+          const fileName = selectedFile.name.toLowerCase();
+          const isCsv = selectedFile.type === 'text/csv' || fileName.endsWith('.csv');
+          const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || selectedFile.type.includes('spreadsheet');
+          
+          if (!isCsv && !isExcel) {
+              setError('잘못된 파일 형식입니다. CSV 또는 Excel 파일을 업로드해주세요.');
               return;
           }
           
@@ -380,6 +385,101 @@
           setGeneratedCsvContent(null);
           setGeneratedCsvRows(null);
           setSelectedClass('all');
+          
+          // Excel 파일 처리
+          if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                  try {
+                      const arrayBuffer = event.target?.result;
+                      if (!arrayBuffer) return;
+                      
+                      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                      const sheetName = workbook.SheetNames[0];
+                      const worksheet = workbook.Sheets[sheetName];
+                      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                      
+                      if (!rows || rows.length < 2) {
+                          setError('Excel 파일에 데이터가 없습니다.');
+                          return;
+                      }
+                      
+                      // Excel을 CSV 형식으로 변환
+                      const headers = rows[0];
+                      const cleanHeaders = headers.map(h => String(h || '').trim().replace(/^\uFEFF/, ''));
+                      
+                      const cleanData = rows.slice(1).map(row => {
+                          const obj = {};
+                          cleanHeaders.forEach((header, idx) => {
+                              obj[header] = String(row[idx] || '').trim();
+                          });
+                          return obj;
+                      });
+                      
+                      if (!cleanData[0] || !('학번' in cleanData[0] && '이름' in cleanData[0] && '날짜' in cleanData[0] && '교시' in cleanData[0] && '과목' in cleanData[0])) {
+                          setError('Excel 파일의 헤더가 올바르지 않습니다. "학번,이름,날짜,교시,과목" 열이 포함되어 있는지 확인해주세요.');
+                          return;
+                      }
+                      
+                      setParsedData(cleanData);
+                      
+                      const timeSlotSet = new Set();
+                      cleanData.forEach(entry => {
+                          if (entry.날짜 && String(entry.교시).trim()) {
+                              timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
+                          }
+                      });
+                      
+                      const calculatedTimeSlots = Array.from(timeSlotSet)
+                          .map(s => {
+                              if (!s || !s.includes('|')) return null;
+                              const [date, periodStr] = s.split('|');
+                              const period = parseInt(periodStr, 10);
+                              if (date && !isNaN(period)) {
+                                  return { date, period };
+                              }
+                              return null;
+                          })
+                          .filter(Boolean)
+                          .sort((a, b) => {
+                              const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
+                              const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
+                              if (dateA.getTime() !== dateB.getTime()) {
+                                  return dateA.getTime() - dateB.getTime();
+                              }
+                              return a.period - b.period;
+                          });
+                      setTimeSlots(calculatedTimeSlots);
+                      
+                      const subjectsBySlot = {};
+                      cleanData.forEach(entry => {
+                          if (isNaN(parseInt(entry.교시, 10))) return;
+                          const key = `${entry.날짜}|${entry.교시}`;
+                          if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
+                          subjectsBySlot[key].add(entry.과목);
+                      });
+                      
+                      const initialHeaderInputs = calculatedTimeSlots.reduce((acc, slot) => {
+                          const key = `${slot.date}|${slot.period}`;
+                          const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
+                          const cleanedSubject = subjects.replace(/\s*\(.*?\)\s*/g, '').trim();
+                          acc[key] = {
+                              subject: cleanedSubject,
+                              time: ''
+                          };
+                          return acc;
+                      }, {});
+                      setHeaderInputs(initialHeaderInputs);
+                  } catch (err) {
+                      setError(`Excel 파싱 오류: ${err.message}`);
+                  }
+              };
+              reader.onerror = () => {
+                  setError('파일을 읽는 중 오류가 발생했습니다.');
+              };
+              reader.readAsArrayBuffer(selectedFile);
+              return;
+          }
           
           Papa.parse(selectedFile, {
               header: true,
@@ -662,7 +762,7 @@
                 </Card>
 
                 <Card className="mt-8">
-                    <SectionTitle step={3} title="시험 일정 파일 업로드" subtitle="'전체 학생 시험 일정' CSV 파일을 선택하세요."/>
+                    <SectionTitle step={3} title="시험 일정 파일 업로드" subtitle="'전체 학생 시험 일정' CSV 또는 Excel 파일을 선택하세요."/>
                     <label
                         htmlFor="file-upload"
                         onDragOver={handleDragOver}
@@ -687,10 +787,10 @@
                             {file ? (
                                 <p className="text-sm text-green-600 dark:text-green-400 font-semibold pt-2">{file.name}</p>
                             ) : (
-                                <p className="text-xs text-red-500 dark:text-red-400">업로드할 파일은 CSV (UTF-8) 형식이어야 합니다.</p>
+                                <p className="text-xs text-red-500 dark:text-red-400">업로드할 파일은 CSV 또는 Excel 형식이어야 합니다.</p>
                             )}
                         </div>
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv" onChange={handleFileChange} />
+                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
                     </label>
                 </Card>
               
