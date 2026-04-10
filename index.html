@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>개인별 시험 시간표 생성기</title>
+    <title>시험 시간표 생성 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -11,99 +11,121 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Tailwind 커스텀 폰트 및 설정 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-      /* 인쇄용 스타일 */
-      @media print {
-        @page {
-          size: A4 landscape;
-          margin: 1cm 0.3cm;
-        }
-
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+        
         body {
-          background: white !important;
-          font-family: 'Malgun Gothic', '맑은 고딕', sans-serif !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
         }
 
-        .print-hidden {
-          display: none !important;
+        /* 인쇄용 스타일 (기존 유지 + 색상 조정) */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm 0.3cm;
+            }
+            body {
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .print-hidden {
+                display: none !important;
+            }
+            #printable-section {
+                margin: 0 !important;
+                padding: 0.5cm !important;
+                box-shadow: none !important;
+            }
+            #printable-section .print-card {
+                box-shadow: none !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+            #printable-section .print-header-container h2 {
+                color: black !important;
+                font-size: 18pt !important;
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            #printable-section .print-header-container img {
+                position: absolute !important;
+                top: 0 !important;
+                right: 0 !important;
+                max-height: 50px !important;
+            }
+            table {
+                width: 100% !important;
+                table-layout: fixed !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border: 1px solid #000 !important;
+                padding: 2px !important; 
+                text-align: center !important;
+                color: black !important;
+                font-size: 7.5pt !important;
+            }
+            thead th {
+                background-color: #f1f5f9 !important;
+                font-weight: bold !important;
+            }
         }
 
-        #printable-section {
-          margin: 0 !important;
-          padding: 0.5cm !important;
-          box-shadow: none !important;
-          box-sizing: border-box;
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-
-        #printable-section .print-card {
-          box-shadow: none !important;
-          border: none !important;
-          background: transparent !important;
-          padding: 0 !important;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
         }
-        
-        #printable-section .print-header-container {
-          position: relative;
-          margin-bottom: 1rem;
-          padding-bottom: 0.5rem;
-          flex-shrink: 0;
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
         }
-        
-        #printable-section .print-header-container h2 {
-          color: black !important;
-          font-size: 18pt !important;
-          font-weight: bold;
-          text-align: center;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
         }
-
-        #printable-section .print-header-container img {
-          position: absolute !important;
-          top: 0 !important;
-          right: 0 !important;
-          max-height: 50px !important;
-          width: auto !important;
-        }
-
-        #printable-section #print-area {
-          flex-grow: 1;
-          overflow: hidden;
-        }
-        
-        table {
-          width: 100% !important;
-          table-layout: fixed !important;
-          border-collapse: collapse !important;
-          color: black !important;
-        }
-        
-        th, td {
-          border: 1px solid #000 !important;
-          padding: 1px 2px !important; 
-          text-align: center !important;
-          color: black !important;
-          overflow-wrap: break-word;
-          font-size: 7.5pt !important;
-        }
-
-        thead th {
-          background-color: #EBF5FF !important; /* 연한 파란색으로 변경 */
-          font-weight: bold !important;
-        }
-      }
     </style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900">
-    <div id="root"></div>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+    <div id="root" class="flex-grow flex flex-col"></div>
 
     <script type="text/babel">
       const { useState, useCallback, useMemo, useEffect, Fragment } = React;
 
-      // From: services/csvProcessor.ts
+      // ==========================================
+      // 데이터 처리 로직
+      // ==========================================
       const getTimeSlotKey = (date, period) => `${date}|${period}`;
 
       const generatePersonalTimetableCsv = (data, metadata, headerInputs) => {
@@ -112,7 +134,7 @@
 
         data.forEach(entry => {
           if (!entry.학번 || !entry.이름 || !entry.날짜 || !entry.교시 || !entry.과목) return;
-          if (isNaN(parseInt(entry.교시, 10))) return; // Ensure '교시' is a number
+          if (isNaN(parseInt(entry.교시, 10))) return;
 
           if (!studentSchedules.has(entry.학번)) {
             studentSchedules.set(entry.학번, { name: entry.이름, exams: {} });
@@ -200,59 +222,107 @@
         return { csvString: bom + csvString, csvRows };
       };
 
-      // From: App.tsx
-      const Card = ({ children, className = '' }) => (
-        <div className={`bg-white dark:bg-slate-800 shadow-lg rounded-xl p-6 sm:p-8 w-full ${className}`}>
-          {children}
+      // ==========================================
+      // UI 컴포넌트
+      // ==========================================
+      
+      const Card = ({ children, className = '', title, badgeText, icon, theme = 'blue' }) => {
+        const themeConfig = {
+            blue: { border: 'bg-blue-500', icon: 'text-blue-500', badge: 'text-blue-700 bg-blue-50 font-bold' },
+            teal: { border: 'bg-teal-400', icon: 'text-teal-500', badge: 'text-teal-700 bg-teal-50 font-bold' },
+            indigo: { border: 'bg-indigo-500', icon: 'text-indigo-500', badge: 'text-indigo-700 bg-indigo-50 font-bold' },
+            purple: { border: 'bg-purple-500', icon: 'text-purple-500', badge: 'text-purple-700 bg-purple-50 font-bold' }
+        };
+        const currentTheme = themeConfig[theme] || themeConfig.blue;
+
+        return (
+            <div className={`bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col ${className}`}>
+                <div className={`absolute top-0 left-0 right-0 h-1.5 ${currentTheme.border}`}></div>
+                <div className="p-6 sm:p-8 flex-grow flex flex-col">
+                    {(title || badgeText) && (
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-3">
+                                {icon && <div className={currentTheme.icon}>{icon}</div>}
+                                {title && <h3 className="text-xl font-bold text-slate-800">{title}</h3>}
+                            </div>
+                            {badgeText && (
+                                <span className={`px-3 py-1 text-xs rounded-lg tracking-wider ${currentTheme.badge}`}>
+                                    {badgeText}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    <div className="flex-grow">
+                        {children}
+                    </div>
+                </div>
+            </div>
+        );
+      };
+
+      const InputBox = ({ label, type = "text", value, onChange, name }) => (
+        <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+            <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
+            <input 
+                type={type} 
+                name={name} 
+                value={value} 
+                onChange={onChange} 
+                className="w-full bg-transparent border-none p-0 text-lg font-bold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300"
+            />
         </div>
       );
 
-      const SectionTitle = ({ title, subtitle, step }) => (
-        <div className="flex items-start space-x-4 mb-6">
-          <div className="flex-shrink-0 w-12 h-12 bg-indigo-500 dark:bg-indigo-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
-            {step}
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{title}</h2>
-            <p className="text-slate-500 dark:text-slate-400">{subtitle}</p>
-          </div>
+      const SelectBox = ({ label, value, onChange, name, options }) => (
+        <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+            <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
+            <select 
+                name={name} 
+                value={value} 
+                onChange={onChange} 
+                className="w-full bg-transparent border-none p-0 text-base font-bold text-slate-800 focus:outline-none focus:ring-0 cursor-pointer"
+            >
+                {options.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+            </select>
         </div>
       );
 
       const TimetablePreviewTable = ({ data }) => {
-          if (data.length === 0) return null;
+          if (!data || data.length === 0) return null;
 
           const headerRows = data.slice(0, 4);
           const bodyRows = data.slice(4);
           const numberOfTimeSlots = data.length > 0 ? data[0].length - 2 : 0;
           const subjectsRow = headerRows[1] || [];
 
-          const bodyCellClasses = "border border-slate-600 py-0.5 px-2 text-center align-middle";
-          const headerCellClasses = `border border-slate-600 py-1 px-2 text-center align-middle font-semibold bg-slate-100 dark:bg-slate-700`;
+          // break-keep을 적용하여 화면이 좁아 테이블이 축소될 때 한글 단어가 이상하게 잘리는 것을 방지합니다.
+          const bodyCellClasses = "border border-slate-200 py-1.5 px-1.5 sm:px-2 text-center align-middle text-xs sm:text-sm break-keep";
+          const headerCellClasses = "border border-slate-200 py-2 px-1.5 sm:px-2 text-center align-middle font-bold bg-slate-50 text-slate-700 text-xs sm:text-sm break-keep";
 
           return (
-              <div id="timetable-scroll-container" className="overflow-x-auto mt-4 print:overflow-visible">
-                  <table className="w-full border-collapse text-sm table-fixed">
+              <div id="timetable-scroll-container" className="overflow-x-auto mt-4 rounded-xl border border-slate-200 print:border-none print:overflow-visible">
+                  {/* 화면에서는 table-auto를 사용하여 컨테이너 크기에 맞게 자동 축소되도록 하고, 인쇄시에는 table-fixed 유지 */}
+                  <table className="w-full border-collapse table-auto print:table-fixed bg-white">
                       <colgroup>
-                          <col style={{ width: '55px' }} />
-                          {/* 1. '이름' 열의 너비를 60px로 수정 */}
                           <col style={{ width: '60px' }} />
+                          <col style={{ width: '80px' }} />
                           {Array.from({ length: numberOfTimeSlots }).map((_, i) => {
-                              let finalWidth = 90; // 기본 너비
+                              let finalWidth = 100; 
                               const subject = subjectsRow[i + 2] || '';
                               const subjectName = subject.split(',')[0].trim();
                               
-                              // 2. '사회문제탐구' 과목일 경우 너비를 100px로 설정 (기본 90px + 10px)
                               if (subjectName.includes('사회문제탐구')) {
-                                  finalWidth = 100; 
+                                  finalWidth = 110; 
                               } else if (subjectName.includes('영어독해와작문')) {
-                                  finalWidth = 130;
+                                  finalWidth = 140;
                               }
-                              
+                              // 화면 렌더링시 width는 '권장 너비'로 작동하며, 화면이 좁으면 유연하게 줄어듭니다.
                               return <col key={i} style={{ width: `${finalWidth}px` }} />;
                           })}
                       </colgroup>
-                      <thead className="bg-slate-50 dark:bg-slate-700">
+                      <thead>
                           {headerRows.map((row, rIndex) => (
                               <tr key={rIndex}>
                                   {rIndex === 0 ? (
@@ -305,7 +375,7 @@
                                                           {restPart && (
                                                               <>
                                                                   <br />
-                                                                  {restPart}
+                                                                  <span className="text-slate-500 font-normal whitespace-nowrap">{restPart}</span>
                                                               </>
                                                           )}
                                                       </th>
@@ -320,9 +390,11 @@
                       </thead>
                       <tbody>
                           {bodyRows.map((row, rIndex) => (
-                              <tr key={rIndex} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                              <tr key={rIndex} className="hover:bg-blue-50/50 transition-colors">
                                   {row.map((cell, cIndex) => (
-                                      <td key={cIndex} className={`${bodyCellClasses} ${cIndex < 2 ? 'font-medium bg-slate-50 dark:bg-slate-700/50' : ''}`}>{cell}</td>
+                                      <td key={cIndex} className={`${bodyCellClasses} ${cIndex < 2 ? 'font-semibold bg-slate-50/50' : ''}`}>
+                                        {cell}
+                                      </td>
                                   ))}
                               </tr>
                           ))}
@@ -333,7 +405,7 @@
       };
 
       const App = () => {
-        const [metadata, setMetadata] = useState({ year: '2025', semester: '1', grade: '3' });
+        const [metadata, setMetadata] = useState({ year: new Date().getFullYear().toString(), semester: '1', grade: '3', examType: 'midterm' });
         const [file, setFile] = useState(null);
         const [logoSrc, setLogoSrc] = useState(null);
         const [parsedData, setParsedData] = useState(null);
@@ -386,7 +458,6 @@
           setGeneratedCsvRows(null);
           setSelectedClass('all');
           
-          // Excel 파일 처리
           if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
               const reader = new FileReader();
               reader.onload = (event) => {
@@ -404,7 +475,6 @@
                           return;
                       }
                       
-                      // Excel을 CSV 형식으로 변환
                       const headers = rows[0];
                       const cleanHeaders = headers.map(h => String(h || '').trim().replace(/^\uFEFF/, ''));
                       
@@ -422,61 +492,12 @@
                       }
                       
                       setParsedData(cleanData);
-                      
-                      const timeSlotSet = new Set();
-                      cleanData.forEach(entry => {
-                          if (entry.날짜 && String(entry.교시).trim()) {
-                              timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
-                          }
-                      });
-                      
-                      const calculatedTimeSlots = Array.from(timeSlotSet)
-                          .map(s => {
-                              if (!s || !s.includes('|')) return null;
-                              const [date, periodStr] = s.split('|');
-                              const period = parseInt(periodStr, 10);
-                              if (date && !isNaN(period)) {
-                                  return { date, period };
-                              }
-                              return null;
-                          })
-                          .filter(Boolean)
-                          .sort((a, b) => {
-                              const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
-                              const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
-                              if (dateA.getTime() !== dateB.getTime()) {
-                                  return dateA.getTime() - dateB.getTime();
-                              }
-                              return a.period - b.period;
-                          });
-                      setTimeSlots(calculatedTimeSlots);
-                      
-                      const subjectsBySlot = {};
-                      cleanData.forEach(entry => {
-                          if (isNaN(parseInt(entry.교시, 10))) return;
-                          const key = `${entry.날짜}|${entry.교시}`;
-                          if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
-                          subjectsBySlot[key].add(entry.과목);
-                      });
-                      
-                      const initialHeaderInputs = calculatedTimeSlots.reduce((acc, slot) => {
-                          const key = `${slot.date}|${slot.period}`;
-                          const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
-                          const cleanedSubject = subjects.replace(/\s*\(.*?\)\s*/g, '').trim();
-                          acc[key] = {
-                              subject: cleanedSubject,
-                              time: ''
-                          };
-                          return acc;
-                      }, {});
-                      setHeaderInputs(initialHeaderInputs);
+                      extractTimeSlotsAndHeaders(cleanData);
                   } catch (err) {
                       setError(`Excel 파싱 오류: ${err.message}`);
                   }
               };
-              reader.onerror = () => {
-                  setError('파일을 읽는 중 오류가 발생했습니다.');
-              };
+              reader.onerror = () => setError('파일을 읽는 중 오류가 발생했습니다.');
               reader.readAsArrayBuffer(selectedFile);
               return;
           }
@@ -501,83 +522,60 @@
                   }
 
                   setParsedData(cleanData);
-
-                  const timeSlotSet = new Set();
-                  cleanData.forEach(entry => {
-                    if (entry.날짜 && String(entry.교시).trim()) {
-                        timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
-                    }
-                  });
-
-                  const calculatedTimeSlots = Array.from(timeSlotSet)
-                    .map(s => {
-                        if (!s || !s.includes('|')) return null;
-                        const [date, periodStr] = s.split('|');
-                        const period = parseInt(periodStr, 10);
-                        if (date && !isNaN(period)) {
-                            return { date, period };
-                        }
-                        return null;
-                    })
-                    .filter(Boolean)
-                    .sort((a, b) => {
-                        const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
-                        const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
-                        if (dateA.getTime() !== dateB.getTime()) {
-                            return dateA.getTime() - dateB.getTime();
-                        }
-                        return a.period - b.period;
-                    });
-                  setTimeSlots(calculatedTimeSlots);
-
-                  const subjectsBySlot = {};
-                  cleanData.forEach(entry => {
-                    if (isNaN(parseInt(entry.교시, 10))) return;
-                    const key = `${entry.날짜}|${entry.교시}`;
-                    if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
-                    subjectsBySlot[key].add(entry.과목);
-                  });
-
-                  const initialHeaderInputs = calculatedTimeSlots.reduce((acc, slot) => {
-                    const key = `${slot.date}|${slot.period}`;
-                    const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
-                    const cleanedSubject = subjects.replace(/\s*\(.*?\)\s*/g, '').trim();
-                    acc[key] = {
-                        subject: cleanedSubject,
-                        time: ''
-                    };
-                    return acc;
-                  }, {});
-                  setHeaderInputs(initialHeaderInputs);
+                  extractTimeSlotsAndHeaders(cleanData);
               },
-              error: (err) => {
-                  setError(`CSV 파싱 오류: ${err.message}`);
-              }
+              error: (err) => setError(`CSV 파싱 오류: ${err.message}`)
           });
         }, []);
 
-        const handleFileChange = (e) => {
-          processFile(e.target.files?.[0]);
+        const extractTimeSlotsAndHeaders = (data) => {
+            const timeSlotSet = new Set();
+            data.forEach(entry => {
+                if (entry.날짜 && String(entry.교시).trim()) {
+                    timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
+                }
+            });
+
+            const calculatedTimeSlots = Array.from(timeSlotSet)
+                .map(s => {
+                    if (!s || !s.includes('|')) return null;
+                    const [date, periodStr] = s.split('|');
+                    const period = parseInt(periodStr, 10);
+                    if (date && !isNaN(period)) return { date, period };
+                    return null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => {
+                    const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
+                    const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
+                    if (dateA.getTime() !== dateB.getTime()) return dateA.getTime() - dateB.getTime();
+                    return a.period - b.period;
+                });
+            setTimeSlots(calculatedTimeSlots);
+
+            const subjectsBySlot = {};
+            data.forEach(entry => {
+                if (isNaN(parseInt(entry.교시, 10))) return;
+                const key = `${entry.날짜}|${entry.교시}`;
+                if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
+                subjectsBySlot[key].add(entry.과목);
+            });
+
+            const initialHeaderInputs = calculatedTimeSlots.reduce((acc, slot) => {
+                const key = `${slot.date}|${slot.period}`;
+                const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
+                const cleanedSubject = subjects.replace(/\s*\(.*?\)\s*/g, '').trim();
+                acc[key] = { subject: cleanedSubject, time: '' };
+                return acc;
+            }, {});
+            setHeaderInputs(initialHeaderInputs);
         };
 
-        const handleDragOver = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDragging(true);
-        };
+        const handleFileChange = (e) => processFile(e.target.files?.[0]);
         
-        const handleDragLeave = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDragging(false);
-        };
-        
-        const handleDrop = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setIsDragging(false);
-          processFile(e.dataTransfer.files?.[0]);
-        };
+        const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+        const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+        const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); processFile(e.dataTransfer.files?.[0]); };
         
         const handleGenerate = useCallback(() => {
           if (!parsedData || timeSlots.length === 0) {
@@ -595,6 +593,11 @@
               const { csvString, csvRows } = generatePersonalTimetableCsv(parsedData, metadata, headerInputs);
               setGeneratedCsvContent(csvString);
               setGeneratedCsvRows(csvRows);
+              
+              setTimeout(() => {
+                  document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+
             } catch (e) {
               setError(`생성 오류: ${e.message}`);
             } finally {
@@ -624,12 +627,9 @@
         }, [generatedCsvRows]);
 
         const filteredCsvRows = useMemo(() => {
-          if (!generatedCsvRows) {
-              return null;
-          }
-          if (selectedClass === 'all') {
-              return generatedCsvRows;
-          }
+          if (!generatedCsvRows) return null;
+          if (selectedClass === 'all') return generatedCsvRows;
+          
           const headerRows = generatedCsvRows.slice(0, 4);
           const bodyRows = generatedCsvRows.slice(4);
 
@@ -646,23 +646,14 @@
 
         const handlePrint = () => {
           const printableElement = document.getElementById('printable-section');
-          if (!printableElement) {
-              setError('인쇄할 내용을 찾을 수 없습니다.');
-              return;
-          }
+          if (!printableElement) return setError('인쇄할 내용을 찾을 수 없습니다.');
 
           const printableClone = printableElement.cloneNode(true);
-          
           const controlsToRemove = printableClone.querySelector('.print-hidden');
-          if (controlsToRemove) {
-            controlsToRemove.remove();
-          }
+          if (controlsToRemove) controlsToRemove.remove();
 
-          const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-          if (!printWindow) {
-              setError('팝업이 차단되었습니다. 인쇄 기능을 사용하려면 팝업을 허용해주세요.');
-              return;
-          }
+          const printWindow = window.open('', '_blank', 'width=1200,height=800');
+          if (!printWindow) return setError('팝업이 차단되었습니다. 팝업을 허용해주세요.');
           
           const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]').outerHTML || '';
           const inlineStyles = Array.from(document.querySelectorAll('style')).map(style => style.innerHTML).join('');
@@ -683,189 +674,259 @@
           `);
           
           printWindow.document.close();
-
-          setTimeout(() => {
-              printWindow.focus();
-              printWindow.print();
-              printWindow.close();
-          }, 1000);
+          setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 1000);
         };
+
+        const BookIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        );
+        const ImageIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        );
+        const UploadIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+        );
+        const ClockIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
         
         return (
-          <div className="min-h-screen text-slate-800 dark:text-slate-200">
-            <main className="w-full max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-              <div className="print-hidden">
-                <div className="text-center p-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg">
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white">개인별/반별 시험시간표 생성기</h1>
-                    <p className="mt-2 text-lg text-indigo-200">CSV 파일을 업로드하여 개인별/반별 시험시간표를 만들어보세요.</p>
+          <div className="flex-grow flex flex-col relative w-full">
+            
+            {/* Hero Section */}
+            <div className="print-hidden bg-gradient-to-br from-[#0c1b3e] via-[#0b2b62] to-[#045994] pt-16 pb-28 px-4 text-center relative overflow-hidden flex-shrink-0">
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20 pointer-events-none">
+                    <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-blue-500 blur-3xl"></div>
+                    <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-teal-400 blur-3xl"></div>
                 </div>
 
-                {error && (
-                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md mt-8" role="alert">
-                        <p className="font-bold">오류</p>
-                        <p>{error}</p>
+                <div className="relative z-10">
+                    <div className="flex justify-center items-center gap-3 mb-6">
+                        <span className="inline-flex items-center gap-1.5 bg-white/10 text-white px-3.5 py-1.5 rounded-full text-sm font-semibold border border-white/20 backdrop-blur-sm">
+                            <ClockIcon /> Timetable Master
+                        </span>
+                        <span className="inline-flex items-center bg-amber-400 text-amber-900 px-3 py-1.5 rounded-full text-xs font-black tracking-wider shadow-sm">
+                            DATA POWERED
+                        </span>
                     </div>
-                )}
-                
-                <Card className="mt-8">
-                    <SectionTitle step={1} title="기본 정보 입력" subtitle="학년도, 학기, 학년 정보를 입력하세요."/>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label htmlFor="year" className="block text-sm font-medium text-slate-700 dark:text-slate-300">학년도</label>
-                            <input type="number" name="year" id="year" value={metadata.year} onChange={handleMetadataChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-                        </div>
-                        <div>
-                            <label htmlFor="semester" className="block text-sm font-medium text-slate-700 dark:text-slate-300">학기</label>
-                            <input type="number" name="semester" id="semester" value={metadata.semester} onChange={handleMetadataChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-                        </div>
-                        <div>
-                            <label htmlFor="grade" className="block text-sm font-medium text-slate-700 dark:text-slate-300">학년</label>
-                            <input type="number" name="grade" id="grade" value={metadata.grade} onChange={handleMetadataChange} className="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"/>
-                        </div>
-                    </div>
-                </Card>
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">
+                        시험 시간표 자동 생성 시스템
+                    </h1>
+                    <p className="text-lg text-blue-100 max-w-2xl mx-auto font-medium">
+                        KICE 스타일의 깔끔한 분석 알고리즘으로<br className="hidden md:block"/> 
+                        학급별/개인별 시간표를 생성합니다.
+                    </p>
+                </div>
+            </div>
 
-                <Card className="mt-8">
-                  <SectionTitle step={2} title="학교 로고 업로드 (선택)" subtitle="시간표 우측 상단에 표시될 로고를 선택하세요." />
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                      <input
-                          type="file"
-                          id="logo-upload"
-                          className="sr-only"
-                          accept="image/*"
-                          onChange={handleLogoChange}
-                      />
-                      <label
-                          htmlFor="logo-upload"
-                          className="cursor-pointer flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                      >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-4-4V7a4 4 0 014-4h2a4 4 0 014 4v1m-4 5h12a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v2m12 6V7a2 2 0 00-2-2H9a2 2 0 00-2 2v10a2 2 0 002 2h2" />
-                          </svg>
-                          {logoSrc ? '로고 변경' : '로고 업로드'}
-                      </label>
-                      {logoSrc && (
-                          <div className="flex items-center gap-2 p-2 border rounded-lg bg-slate-50 dark:bg-slate-700/50">
-                              <img src={logoSrc} alt="학교 로고 미리보기" className="h-16 max-w-xs object-contain rounded-md bg-white" />
-                              <button 
-                                onClick={() => setLogoSrc(null)} 
-                                className="p-1.5 text-slate-500 hover:text-red-600 dark:hover:text-red-400 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors self-start"
-                                aria-label="로고 삭제"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                          </div>
-                      )}
-                  </div>
-                </Card>
-
-                <Card className="mt-8">
-                    <SectionTitle step={3} title="시험 일정 파일 업로드" subtitle="'전체 학생 시험 일정' CSV 또는 Excel 파일을 선택하세요."/>
-                    <label
-                        htmlFor="file-upload"
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        className={`transition-colors duration-200 mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-md cursor-pointer ${
-                            isDragging 
-                            ? 'border-indigo-500 bg-indigo-50 dark:bg-slate-700' 
-                            : 'hover:border-indigo-400 dark:hover:border-indigo-500'
-                        }`}
-                    >
-                        <div className="space-y-1 text-center">
-                            <svg className="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            <div className="flex text-sm text-slate-600 dark:text-slate-400 justify-center">
-                                <p className="relative cursor-pointer bg-white dark:bg-slate-800 rounded-md font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                    <span>파일 업로드</span>
-                                </p>
-                                <p className="pl-1">또는 파일을 끌어오세요</p>
-                            </div>
-                            {file ? (
-                                <p className="text-sm text-green-600 dark:text-green-400 font-semibold pt-2">{file.name}</p>
-                            ) : (
-                                <p className="text-xs text-red-500 dark:text-red-400">업로드할 파일은 CSV 또는 Excel 형식이어야 합니다.</p>
-                            )}
-                        </div>
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
-                    </label>
-                </Card>
+            {/* 메인 래퍼: 데이터 입력 영역은 화면 중앙(최대 1152px) 정렬 */}
+            <main className="w-full relative z-20 -mt-16 flex-grow flex flex-col">
               
-                <div className="flex flex-col items-center space-y-4 pt-4">
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isGenerateDisabled}
-                        className="w-full max-w-xs flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-                    >
-                        {isLoading ? (
-                            <>
-                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+                  <div className="print-hidden space-y-6">
+                    
+                    {error && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm flex items-start gap-3">
+                            <svg className="h-5 w-5 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <p className="font-bold text-red-800 text-sm">오류가 발생했습니다</p>
+                                <p className="text-red-600 text-sm mt-1">{error}</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card title="기본 학사 정보" badgeText="SCOPE SETTING" icon={<BookIcon/>} theme="blue">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <InputBox label="학년도" type="number" name="year" value={metadata.year} onChange={handleMetadataChange} />
+                                <InputBox label="학기" type="number" name="semester" value={metadata.semester} onChange={handleMetadataChange} />
+                                <SelectBox 
+                                    label="고사 구분" 
+                                    name="examType" 
+                                    value={metadata.examType} 
+                                    onChange={handleMetadataChange} 
+                                    options={[
+                                        { value: 'midterm', label: '중간고사' },
+                                        { value: 'final', label: '기말고사' }
+                                    ]} 
+                                />
+                                <InputBox label="학년" type="number" name="grade" value={metadata.grade} onChange={handleMetadataChange} />
+                            </div>
+                        </Card>
+
+                        <Card title="출력물 디자인 요소" badgeText="VISUAL SETTING" icon={<ImageIcon/>} theme="teal">
+                            <div className="h-full flex flex-col justify-center">
+                                <p className="text-sm font-semibold text-slate-500 mb-3">시간표 우측 상단에 표시될 학교 로고 (선택)</p>
+                                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 min-h-[76px]">
+                                    <input type="file" id="logo-upload" className="sr-only" accept="image/*" onChange={handleLogoChange}/>
+                                    <label
+                                        htmlFor="logo-upload"
+                                        className="cursor-pointer flex-shrink-0 px-4 py-2 text-sm font-bold rounded-xl text-teal-700 bg-teal-100 hover:bg-teal-200 transition-colors shadow-sm"
+                                    >
+                                        {logoSrc ? '로고 변경하기' : '이미지 파일 선택'}
+                                    </label>
+                                    {logoSrc ? (
+                                        <div className="flex items-center gap-3 w-full justify-between pr-2">
+                                            <img src={logoSrc} alt="미리보기" className="h-10 max-w-[120px] object-contain rounded bg-white p-1 border border-slate-200 shadow-sm" />
+                                            <button onClick={() => setLogoSrc(null)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="삭제">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span className="text-sm text-slate-400 font-medium">선택된 파일 없음</span>
+                                    )}
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    <Card title="데이터 원본 업로드" badgeText="DATA INPUT" icon={<UploadIcon/>} theme="indigo">
+                        <label
+                            htmlFor="file-upload"
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            className={`transition-all duration-200 flex flex-col items-center justify-center px-6 py-10 border-2 border-dashed rounded-2xl cursor-pointer ${
+                                isDragging 
+                                ? 'border-indigo-400 bg-indigo-50/50' 
+                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
+                            }`}
+                        >
+                            <div className={`p-4 rounded-full mb-4 ${file ? 'bg-indigo-100 text-indigo-600' : 'bg-white shadow-sm text-slate-400'}`}>
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    {file ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    )}
                                 </svg>
-                                생성 중...
-                            </>
-                        ) : (generatedCsvContent ? '다시 생성하기' : '개인별 시간표 생성')}
-                    </button>
-                </div>
+                            </div>
+                            
+                            <div className="text-center">
+                                {file ? (
+                                    <>
+                                        <p className="text-lg font-bold text-indigo-700">{file.name}</p>
+                                        <p className="text-sm text-indigo-500 mt-1">파일이 성공적으로 로드되었습니다.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-base font-bold text-slate-700 mb-1">클릭하여 파일 선택 또는 여기로 드래그</p>
+                                        <p className="text-sm text-slate-500">CSV 또는 Excel 형식 (.csv, .xlsx)</p>
+                                    </>
+                                )}
+                            </div>
+                            <input id="file-upload" type="file" className="sr-only" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
+                        </label>
+                    </Card>
+                  
+                    <div className="pt-8 pb-4 flex justify-center">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isGenerateDisabled}
+                            className={`group relative flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full shadow-lg transition-all duration-300 w-full max-w-sm overflow-hidden ${
+                                isGenerateDisabled 
+                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-95'
+                            }`}
+                        >
+                            {!isGenerateDisabled && (
+                                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                            )}
+                            
+                            {isLoading ? (
+                                <>
+                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    데이터 처리 중...
+                                </>
+                            ) : (
+                                <span>{generatedCsvContent ? '최신 정보로 다시 생성' : '시간표 생성'}</span>
+                            )}
+                        </button>
+                        
+                        <style dangerouslySetInnerHTML={{__html: `
+                            @keyframes shimmer {
+                                100% { transform: translateX(100%); }
+                            }
+                        `}} />
+                    </div>
+                  </div>
               </div>
 
+              {/* 결과 화면 영역: 한눈에 꽉 차게 보이도록 화면 너비(최대 1600px)를 사용합니다. */}
               {filteredCsvRows && (
-                  <div id="printable-section">
-                      <div className="print-hidden mb-6 text-center">
-                            <p className="text-slate-500 dark:text-slate-400 mb-4">
-                                생성된 개인별 시간표입니다. 반을 선택하여 보거나 인쇄하세요.
-                            </p>
-                            <div className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-4">
-                                <button
-                                    onClick={handlePrint}
-                                    className="flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
->
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                    </svg>
-                                    인쇄하기
-                                </button>
-                                {availableClasses.length > 1 && (
-                                    <div className="flex flex-wrap justify-center gap-2">
+                  <div id="result-section" className="w-full bg-slate-50/70 border-t border-slate-200 mt-4 pt-10 pb-20 px-2 sm:px-6 lg:px-8 print:bg-white print:border-none print:p-0 print:mt-0 print:pb-0">
+                      <div className="max-w-[1600px] mx-auto w-full">
+                          
+                          <div className="print-hidden mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 max-w-6xl mx-auto">
+                              <div className="w-full md:w-auto">
+                                {availableClasses.length > 1 ? (
+                                    <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
                                         {availableClasses.map(className => (
                                             <button
                                                 key={className}
                                                 onClick={() => setSelectedClass(className)}
-                                                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                                                className={`whitespace-nowrap px-5 py-2 text-sm font-bold rounded-lg transition-all ${
                                                     selectedClass === className
-                                                        ? 'bg-green-600 text-white shadow'
-                                                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600'
+                                                        ? 'bg-white text-blue-600 shadow-sm'
+                                                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
                                                 }`}
                                             >
-                                                {className === 'all' ? '전체' : `${className}반`}
+                                                {className === 'all' ? '전체 보기' : `${className}반`}
                                             </button>
                                         ))}
                                     </div>
+                                ) : (
+                                    <p className="text-slate-500 font-medium px-2">생성 완료된 시간표</p>
                                 )}
-                            </div>
-                      </div>
-                      <Card className="print-card">
-                          <div className="relative mb-4 print-header-container">
-                              <h2 className="text-center text-2xl font-bold pt-2 text-slate-800 dark:text-slate-100">
-                                  {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 시험 시간표`}
-                              </h2>
-                              {logoSrc && (
-                                  <img
-                                      src={logoSrc}
-                                      alt="학교 로고"
-                                      className="absolute top-0 right-0 max-h-[32px] w-auto"
-                                  />
-                              )}
+                              </div>
+                              
+                              <button
+                                  onClick={handlePrint}
+                                  className="w-full md:w-auto flex items-center justify-center px-6 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors shadow-sm"
+                              >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                  </svg>
+                                  인쇄하기
+                              </button>
                           </div>
 
-                          <div id="print-area">
-                              <TimetablePreviewTable data={filteredCsvRows} />
+                          <div id="printable-section" className="w-full">
+                              <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-4 sm:p-8 print-card print:p-0">
+                                  <div className="relative mb-6 print-header-container border-b-2 border-slate-800 pb-4 print:border-b-2">
+                                      <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                          {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 ${metadata.examType === 'midterm' ? '중간고사' : '기말고사'} 시간표`}
+                                      </h2>
+                                      {logoSrc && (
+                                          <img
+                                              src={logoSrc}
+                                              alt="School Logo"
+                                              className="absolute top-1/2 -translate-y-1/2 right-0 max-h-[40px] w-auto"
+                                          />
+                                      )}
+                                  </div>
+
+                                  <div id="print-area" className="w-full">
+                                      <TimetablePreviewTable data={filteredCsvRows} />
+                                  </div>
+                              </div>
                           </div>
-                      </Card>
+                      </div>
                   </div>
               )}
             </main>
@@ -875,11 +936,7 @@
 
       const rootElement = document.getElementById('root');
       const root = ReactDOM.createRoot(rootElement);
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      );
+      root.render(<App />);
     </script>
 </body>
 </html>
