@@ -43,59 +43,110 @@
             background-color: #f8fafc;
         }
 
-        /* 인쇄용 스타일 (기존 유지 + 색상 조정) */
+        /* 인쇄용 스타일 (한 페이지 꽉 채우기 및 오른쪽 잘림 절대 방지) */
         @media print {
             @page {
                 size: A4 landscape;
-                margin: 1cm 0.3cm;
+                margin: 5mm; /* 최소 여백 */
             }
-            body {
+            html, body {
                 background: white !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                height: 100vh !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important; /* 페이지 넘어감 강제 방지 */
             }
             .print-hidden {
                 display: none !important;
             }
             #printable-section {
                 margin: 0 !important;
-                padding: 0.5cm !important;
+                padding: 0 !important;
                 box-shadow: none !important;
+                height: 100vh !important;
+                display: flex !important;
+                flex-direction: column !important;
             }
             #printable-section .print-card {
                 box-shadow: none !important;
                 border: none !important;
                 background: transparent !important;
                 padding: 0 !important;
+                height: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            .print-header-container {
+                margin-bottom: 3mm !important;
+                padding-bottom: 2mm !important;
+                border-bottom: 1px solid #000 !important;
+                flex-shrink: 0 !important;
             }
             #printable-section .print-header-container h2 {
                 color: black !important;
-                font-size: 18pt !important;
+                font-size: 15pt !important; 
                 font-weight: bold;
                 text-align: center;
-                margin-bottom: 1rem;
+                margin: 0 !important;
             }
             #printable-section .print-header-container img {
                 position: absolute !important;
-                top: 0 !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
                 right: 0 !important;
-                max-height: 50px !important;
+                max-height: 25px !important;
             }
+            #print-area {
+                flex-grow: 1 !important;
+                height: 100% !important;
+                overflow: hidden !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            #timetable-scroll-container {
+                margin: 0 !important;
+                height: 100% !important;
+                flex-grow: 1 !important;
+            }
+            
             table {
                 width: 100% !important;
+                max-width: 100% !important;
+                height: 100% !important; /* 테이블을 부모 높이에 꽉 채움 */
                 table-layout: fixed !important;
                 border-collapse: collapse !important;
             }
+            
+            /* 핵심 수정: 화면 스크롤용 인라인 픽셀 너비 강제 무시 */
+            table col {
+                width: auto !important;
+            }
+            table col:nth-child(1) {
+                width: 45px !important; /* 학번 열 고정 너비 */
+            }
+            table col:nth-child(2) {
+                width: 55px !important; /* 이름 열 고정 너비 */
+            }
+
             th, td {
                 border: 1px solid #000 !important;
-                padding: 2px !important; 
+                padding: 2px 1px !important; /* 좌우 여백 최소화, 과목수 많을때 공간 확보 */
                 text-align: center !important;
                 color: black !important;
-                font-size: 7.5pt !important;
+                font-size: 7.5pt !important; /* 많은 열 수용을 위해 폰트 사이즈 미세 축소 */
+                line-height: 1.2 !important; 
+                vertical-align: middle !important;
+                word-break: keep-all !important; /* 한글 단어 단위 줄바꿈 유지 */
+                overflow-wrap: break-word !important; /* 영역 벗어나면 강제 줄바꿈 */
+                white-space: normal !important; /* nowrap 속성 등 강제 해제 */
             }
             thead th {
                 background-color: #f1f5f9 !important;
                 font-weight: bold !important;
+                height: 1% !important; /* 헤더는 최소 높이만 차지하게 */
+                padding: 4px 1px !important; 
             }
         }
 
@@ -124,9 +175,39 @@
       const { useState, useCallback, useMemo, useEffect, Fragment } = React;
 
       // ==========================================
-      // 데이터 처리 로직
+      // 데이터 및 유틸 처리 로직
       // ==========================================
       const getTimeSlotKey = (date, period) => `${date}|${period}`;
+
+      // 날짜 포맷팅 함수: 입력값을 yyyy/mm/dd(aaa) 형식으로 통일
+      const formatUniformDate = (rawDate, defaultYear) => {
+          if (!rawDate) return '';
+          
+          // 년, 월, 일 숫자 추출
+          const dateRegex = /(?:(\d{4})[./-])?\s*(\d{1,2})[./-]\s*(\d{1,2})/;
+          const match = rawDate.match(dateRegex);
+          
+          if (!match) return rawDate;
+
+          const year = match[1] || defaultYear;
+          const month = parseInt(match[2], 10);
+          const day = parseInt(match[3], 10);
+
+          let dow = '';
+          const dowMatch = rawDate.match(/\(([가-힣a-zA-Z])\)/);
+          if (dowMatch) {
+              dow = dowMatch[1];
+          } else {
+              const dateObj = new Date(year, month - 1, day);
+              const days = ['일', '월', '화', '수', '목', '금', '토'];
+              dow = days[dateObj.getDay()];
+          }
+
+          const paddedMonth = String(month).padStart(2, '0');
+          const paddedDay = String(day).padStart(2, '0');
+
+          return `${year}/${paddedMonth}/${paddedDay}(${dow})`;
+      };
 
       const generatePersonalTimetableCsv = (data, metadata, headerInputs) => {
         const studentSchedules = new Map();
@@ -297,14 +378,12 @@
           const numberOfTimeSlots = data.length > 0 ? data[0].length - 2 : 0;
           const subjectsRow = headerRows[1] || [];
 
-          // break-keep을 적용하여 화면이 좁아 테이블이 축소될 때 한글 단어가 이상하게 잘리는 것을 방지합니다.
           const bodyCellClasses = "border border-slate-200 py-1.5 px-1.5 sm:px-2 text-center align-middle text-xs sm:text-sm break-keep";
           const headerCellClasses = "border border-slate-200 py-2 px-1.5 sm:px-2 text-center align-middle font-bold bg-slate-50 text-slate-700 text-xs sm:text-sm break-keep";
 
           return (
-              <div id="timetable-scroll-container" className="overflow-x-auto mt-4 rounded-xl border border-slate-200 print:border-none print:overflow-visible">
-                  {/* 화면에서는 table-auto를 사용하여 컨테이너 크기에 맞게 자동 축소되도록 하고, 인쇄시에는 table-fixed 유지 */}
-                  <table className="w-full border-collapse table-auto print:table-fixed bg-white">
+              <div id="timetable-scroll-container" className="overflow-x-auto mt-4 rounded-xl border border-slate-200 print:border-none print:overflow-hidden print:h-full print:mt-0 print:rounded-none">
+                  <table className="w-full border-collapse table-auto print:table-fixed bg-white print:h-full">
                       <colgroup>
                           <col style={{ width: '60px' }} />
                           <col style={{ width: '80px' }} />
@@ -318,7 +397,6 @@
                               } else if (subjectName.includes('영어독해와작문')) {
                                   finalWidth = 140;
                               }
-                              // 화면 렌더링시 width는 '권장 너비'로 작동하며, 화면이 좁으면 유연하게 줄어듭니다.
                               return <col key={i} style={{ width: `${finalWidth}px` }} />;
                           })}
                       </colgroup>
@@ -375,7 +453,8 @@
                                                           {restPart && (
                                                               <>
                                                                   <br />
-                                                                  <span className="text-slate-500 font-normal whitespace-nowrap">{restPart}</span>
+                                                                  {/* 텍스트가 인쇄 시 테이블 너비를 강제로 늘리지 않도록 print:whitespace-normal 추가 */}
+                                                                  <span className="text-slate-500 font-normal whitespace-nowrap print:whitespace-normal">{restPart}</span>
                                                               </>
                                                           )}
                                                       </th>
@@ -483,6 +562,10 @@
                           cleanHeaders.forEach((header, idx) => {
                               obj[header] = String(row[idx] || '').trim();
                           });
+                          // 데이터 처리 시 날짜 포맷팅 반영
+                          if (obj['날짜']) {
+                              obj['날짜'] = formatUniformDate(obj['날짜'], metadata.year);
+                          }
                           return obj;
                       });
                       
@@ -513,6 +596,10 @@
                         const cleanKey = key.trim().replace(/^\uFEFF/, '');
                         newRow[cleanKey] = row[key];
                     }
+                    // 데이터 처리 시 날짜 포맷팅 반영
+                    if (newRow['날짜']) {
+                        newRow['날짜'] = formatUniformDate(newRow['날짜'], metadata.year);
+                    }
                     return newRow;
                   });
 
@@ -526,7 +613,7 @@
               },
               error: (err) => setError(`CSV 파싱 오류: ${err.message}`)
           });
-        }, []);
+        }, [metadata.year]);
 
         const extractTimeSlotsAndHeaders = (data) => {
             const timeSlotSet = new Set();
@@ -658,6 +745,7 @@
           const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]').outerHTML || '';
           const inlineStyles = Array.from(document.querySelectorAll('style')).map(style => style.innerHTML).join('');
 
+          // 팝업 창 안에서도 페이지 전체를 꽉 채우도록 스타일 강제 추가
           printWindow.document.write(`
               <!DOCTYPE html>
               <html lang="ko">
@@ -665,7 +753,22 @@
                   <meta charset="UTF-8">
                   <title>시험 시간표 인쇄</title>
                   ${tailwindScript}
-                  <style>${inlineStyles}</style>
+                  <style>
+                      ${inlineStyles}
+                      @page { size: A4 landscape; margin: 5mm; }
+                      html, body { 
+                          height: 100vh !important; 
+                          margin: 0 !important; 
+                          padding: 0 !important; 
+                          overflow: hidden !important; 
+                          background: white !important;
+                      }
+                      #printable-section {
+                          height: 100vh !important;
+                          display: flex !important;
+                          flex-direction: column !important;
+                      }
+                  </style>
               </head>
               <body class="bg-white">
                   ${printableClone.innerHTML}
@@ -870,7 +973,7 @@
               {/* 결과 화면 영역: 한눈에 꽉 차게 보이도록 화면 너비(최대 1600px)를 사용합니다. */}
               {filteredCsvRows && (
                   <div id="result-section" className="w-full bg-slate-50/70 border-t border-slate-200 mt-4 pt-10 pb-20 px-2 sm:px-6 lg:px-8 print:bg-white print:border-none print:p-0 print:mt-0 print:pb-0">
-                      <div className="max-w-[1600px] mx-auto w-full">
+                      <div className="max-w-[1600px] mx-auto w-full print:max-w-none">
                           
                           <div className="print-hidden mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 max-w-6xl mx-auto">
                               <div className="w-full md:w-auto">
