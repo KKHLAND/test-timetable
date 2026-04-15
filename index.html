@@ -179,25 +179,44 @@
       // ==========================================
       const getTimeSlotKey = (date, period) => `${date}|${period}`;
 
-      // 날짜 포맷팅 함수: 입력값을 yyyy/mm/dd(aaa) 형식으로 통일
+      // 날짜 포맷팅 함수: 엑셀 시리얼 넘버 및 다양한 형태 대응
       const formatUniformDate = (rawDate, defaultYear) => {
           if (!rawDate) return '';
           
-          // 년, 월, 일 숫자 추출
-          const dateRegex = /(?:(\d{4})[./-])?\s*(\d{1,2})[./-]\s*(\d{1,2})/;
-          const match = rawDate.match(dateRegex);
-          
-          if (!match) return rawDate;
-
-          const year = match[1] || defaultYear;
-          const month = parseInt(match[2], 10);
-          const day = parseInt(match[3], 10);
-
+          let dateStr = String(rawDate).trim();
+          let year = defaultYear;
+          let month = 1;
+          let day = 1;
           let dow = '';
-          const dowMatch = rawDate.match(/\(([가-힣a-zA-Z])\)/);
+
+          // 1. 엑셀 시리얼 날짜 (예: 46136 -> 2026-04-24) 강제 변환
+          if (/^\d{5}$/.test(dateStr)) {
+              const serial = parseInt(dateStr, 10);
+              // UTC 기준으로 1899년 12월 30일에 날짜값을 더해 타임존 오차 방지
+              const dateObj = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+              year = dateObj.getUTCFullYear();
+              month = dateObj.getUTCMonth() + 1;
+              day = dateObj.getUTCDate();
+          } else {
+              // 2. 일반 문자열 날짜 추출 (예: 2026.04.24, 4/24, 04-24 등)
+              const dateRegex = /(?:(\d{4})[년.\-\/]\s*)?(\d{1,2})[월.\-\/]\s*(\d{1,2})[일]?/;
+              const match = dateStr.match(dateRegex);
+              
+              if (match) {
+                  if (match[1]) year = match[1];
+                  month = parseInt(match[2], 10);
+                  day = parseInt(match[3], 10);
+              } else {
+                  return dateStr; // 매칭 안되면 원본 반환
+              }
+          }
+
+          // 3. 요일 추출 (원본에 (금) 처럼 있으면 그대로 사용)
+          const dowMatch = String(rawDate).match(/\(([가-힣a-zA-Z])\)/);
           if (dowMatch) {
               dow = dowMatch[1];
           } else {
+              // 요일이 없으면 날짜를 통해 계산
               const dateObj = new Date(year, month - 1, day);
               const days = ['일', '월', '화', '수', '목', '금', '토'];
               dow = days[dateObj.getDay()];
@@ -453,7 +472,6 @@
                                                           {restPart && (
                                                               <>
                                                                   <br />
-                                                                  {/* 텍스트가 인쇄 시 테이블 너비를 강제로 늘리지 않도록 print:whitespace-normal 추가 */}
                                                                   <span className="text-slate-500 font-normal whitespace-nowrap print:whitespace-normal">{restPart}</span>
                                                               </>
                                                           )}
@@ -562,7 +580,7 @@
                           cleanHeaders.forEach((header, idx) => {
                               obj[header] = String(row[idx] || '').trim();
                           });
-                          // 데이터 처리 시 날짜 포맷팅 반영
+                          // 엑셀에서 날짜 데이터를 파싱할 때 새로운 포맷터 적용
                           if (obj['날짜']) {
                               obj['날짜'] = formatUniformDate(obj['날짜'], metadata.year);
                           }
@@ -596,7 +614,7 @@
                         const cleanKey = key.trim().replace(/^\uFEFF/, '');
                         newRow[cleanKey] = row[key];
                     }
-                    // 데이터 처리 시 날짜 포맷팅 반영
+                    // CSV에서 날짜 데이터를 파싱할 때 새로운 포맷터 적용
                     if (newRow['날짜']) {
                         newRow['날짜'] = formatUniformDate(newRow['날짜'], metadata.year);
                     }
