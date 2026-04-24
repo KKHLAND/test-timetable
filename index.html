@@ -11,25 +11,13 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Tailwind 커스텀 폰트 및 설정 -->
     <script>
         tailwind.config = {
-            darkMode: 'class', 
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'Roboto', 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
                     }
                 }
             }
@@ -37,1027 +25,955 @@
     </script>
     <style>
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-        
-        body {
-            font-family: 'Pretendard', sans-serif;
-            background-color: #f8fafc;
-        }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
 
-        /* 인쇄용 스타일 (한 페이지 꽉 채우기 및 오른쪽 잘림 절대 방지) */
+        /* ── 통합 시간표 인쇄 ── */
         @media print {
-            @page {
-                size: A4 landscape;
-                margin: 5mm; /* 최소 여백 */
-            }
-            html, body {
-                background: white !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                height: 100vh !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important; /* 페이지 넘어감 강제 방지 */
-            }
-            .print-hidden {
-                display: none !important;
-            }
-            #printable-section {
-                margin: 0 !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-                height: 100vh !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-            #printable-section .print-card {
-                box-shadow: none !important;
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
-                height: 100% !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-            .print-header-container {
-                margin-bottom: 3mm !important;
-                padding-bottom: 2mm !important;
-                border-bottom: 1px solid #000 !important;
-                flex-shrink: 0 !important;
-            }
-            #printable-section .print-header-container h2 {
-                color: black !important;
-                font-size: 15pt !important; 
-                font-weight: bold;
-                text-align: center;
-                margin: 0 !important;
-            }
-            #printable-section .print-header-container img {
-                position: absolute !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
-                right: 0 !important;
-                max-height: 25px !important;
-            }
-            #print-area {
-                flex-grow: 1 !important;
-                height: 100% !important;
-                overflow: hidden !important;
-                display: flex !important;
-                flex-direction: column !important;
-            }
-            #timetable-scroll-container {
-                margin: 0 !important;
-                height: 100% !important;
-                flex-grow: 1 !important;
-            }
-            
-            table {
-                width: 100% !important;
-                max-width: 100% !important;
-                height: 100% !important; /* 테이블을 부모 높이에 꽉 채움 */
-                table-layout: fixed !important;
-                border-collapse: collapse !important;
-            }
-            
-            /* 핵심 수정: 화면 스크롤용 인라인 픽셀 너비 강제 무시 */
-            table col {
-                width: auto !important;
-            }
-            table col:nth-child(1) {
-                width: 45px !important; /* 학번 열 고정 너비 */
-            }
-            table col:nth-child(2) {
-                width: 55px !important; /* 이름 열 고정 너비 */
-            }
-
-            th, td {
-                border: 1px solid #000 !important;
-                padding: 3px 1px !important; /* 좌우 여백 최소화, 상하 여백 미세(5%) 증가 */
-                text-align: center !important;
-                color: black !important;
-                font-size: 7.5pt !important; /* 많은 열 수용을 위해 폰트 사이즈 미세 축소 */
-                line-height: 1.26 !important; /* 기존 1.2에서 5% 증가 */
-                vertical-align: middle !important;
-                word-break: keep-all !important; /* 한글 단어 단위 줄바꿈 유지 */
-                overflow-wrap: break-word !important; /* 영역 벗어나면 강제 줄바꿈 */
-                white-space: normal !important; /* nowrap 속성 등 강제 해제 */
-            }
-            thead th {
-                background-color: #f1f5f9 !important;
-                font-weight: bold !important;
-                height: 1% !important; /* 헤더는 최소 높이만 차지하게 */
-                padding: 4px 1px !important; 
-            }
+            @page { size: A4 landscape; margin: 5mm; }
+            html, body { background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; height: 100vh !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+            .print-hidden { display: none !important; }
+            #printable-section { margin: 0 !important; padding: 0 !important; box-shadow: none !important; height: 100vh !important; display: flex !important; flex-direction: column !important; }
+            #printable-section .print-card { box-shadow: none !important; border: none !important; background: transparent !important; padding: 0 !important; height: 100% !important; display: flex !important; flex-direction: column !important; }
+            .print-header-container { margin-bottom: 3mm !important; padding-bottom: 2mm !important; border-bottom: 1px solid #000 !important; flex-shrink: 0 !important; }
+            #printable-section .print-header-container h2 { color: black !important; font-size: 15pt !important; font-weight: bold; text-align: center; margin: 0 !important; }
+            #printable-section .print-header-container img { position: absolute !important; top: 50% !important; transform: translateY(-50%) !important; right: 0 !important; max-height: 25px !important; }
+            #print-area { flex-grow: 1 !important; height: 100% !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
+            #timetable-scroll-container { margin: 0 !important; height: 100% !important; flex-grow: 1 !important; }
+            table { width: 100% !important; max-width: 100% !important; height: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; }
+            table col { width: auto !important; }
+            table col:nth-child(1) { width: 45px !important; }
+            table col:nth-child(2) { width: 55px !important; }
+            th, td { border: 1px solid #000 !important; padding: 3px 1px !important; text-align: center !important; color: black !important; font-size: 7.5pt !important; line-height: 1.26 !important; vertical-align: middle !important; word-break: keep-all !important; overflow-wrap: break-word !important; white-space: normal !important; }
+            thead th { background-color: #f1f5f9 !important; font-weight: bold !important; height: 1% !important; padding: 4px 1px !important; }
         }
 
-        /* 커스텀 스크롤바 */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ── 개인 카드 화면 미리보기 ── */
+        .individual-card-screen {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 4px;
+        .ic-header {
+            background: linear-gradient(135deg, #0c1b3e 0%, #045994 100%);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1; 
-            border-radius: 4px;
+        .ic-student-info {
+            background: #eff6ff;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            border-bottom: 1.5px solid #bfdbfe;
+            flex-shrink: 0;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; 
-        }
+        .ic-table-wrap table { width: 100%; border-collapse: collapse; }
+        .ic-table-wrap thead tr { background: #f8fafc; }
+        .ic-table-wrap th { border: 1px solid #e2e8f0; border-bottom: 1.5px solid #b0bec5; padding: 7px 6px; text-align: center; font-size: 11px; font-weight: 700; color: #475569; }
+        .ic-table-wrap td { border: 1px solid #e2e8f0; padding: 7px 6px; text-align: center; vertical-align: middle; font-size: 12px; }
+        .ic-table-wrap tr:nth-child(even) { background: #fafbfc; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
-    <div id="root" class="flex-grow flex flex-col"></div>
+<div id="root" class="flex-grow flex flex-col"></div>
 
-    <script type="text/babel">
-      const { useState, useCallback, useMemo, useEffect, Fragment } = React;
+<script type="text/babel">
+const { useState, useCallback, useMemo, useEffect, Fragment } = React;
 
-      // ==========================================
-      // 데이터 및 유틸 처리 로직
-      // ==========================================
-      const getTimeSlotKey = (date, period) => `${date}|${period}`;
+// ==========================================
+// 유틸리티 함수
+// ==========================================
+const getTimeSlotKey = (date, period) => `${date}|${period}`;
 
-      // 날짜 포맷팅 함수: 엑셀 시리얼 넘버 및 다양한 형태 대응
-      const formatUniformDate = (rawDate, defaultYear) => {
-          if (!rawDate) return '';
-          
-          let dateStr = String(rawDate).trim();
-          let year = defaultYear;
-          let month = 1;
-          let day = 1;
-          let dow = '';
+const formatUniformDate = (rawDate, defaultYear) => {
+    if (!rawDate) return '';
+    let dateStr = String(rawDate).trim();
+    let year = defaultYear, month = 1, day = 1, dow = '';
+    if (/^\d{5}$/.test(dateStr)) {
+        const serial = parseInt(dateStr, 10);
+        const dateObj = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
+        year = dateObj.getUTCFullYear(); month = dateObj.getUTCMonth() + 1; day = dateObj.getUTCDate();
+    } else {
+        const dateRegex = /(?:(\d{4})[년.\-\/]\s*)?(\d{1,2})[월.\-\/]\s*(\d{1,2})[일]?/;
+        const match = dateStr.match(dateRegex);
+        if (match) { if (match[1]) year = match[1]; month = parseInt(match[2], 10); day = parseInt(match[3], 10); }
+        else return dateStr;
+    }
+    const dowMatch = String(rawDate).match(/\(([가-힣a-zA-Z])\)/);
+    if (dowMatch) { dow = dowMatch[1]; }
+    else { const d = new Date(year, month - 1, day); dow = ['일','월','화','수','목','금','토'][d.getDay()]; }
+    return `${year}/${String(month).padStart(2,'0')}/${String(day).padStart(2,'0')}(${dow})`;
+};
 
-          // 1. 엑셀 시리얼 날짜 (예: 46136 -> 2026-04-24) 강제 변환
-          if (/^\d{5}$/.test(dateStr)) {
-              const serial = parseInt(dateStr, 10);
-              // UTC 기준으로 1899년 12월 30일에 날짜값을 더해 타임존 오차 방지
-              const dateObj = new Date(Date.UTC(1899, 11, 30) + serial * 86400000);
-              year = dateObj.getUTCFullYear();
-              month = dateObj.getUTCMonth() + 1;
-              day = dateObj.getUTCDate();
-          } else {
-              // 2. 일반 문자열 날짜 추출 (예: 2026.04.24, 4/24, 04-24 등)
-              const dateRegex = /(?:(\d{4})[년.\-\/]\s*)?(\d{1,2})[월.\-\/]\s*(\d{1,2})[일]?/;
-              const match = dateStr.match(dateRegex);
-              
-              if (match) {
-                  if (match[1]) year = match[1];
-                  month = parseInt(match[2], 10);
-                  day = parseInt(match[3], 10);
-              } else {
-                  return dateStr; // 매칭 안되면 원본 반환
-              }
-          }
-
-          // 3. 요일 추출 (원본에 (금) 처럼 있으면 그대로 사용)
-          const dowMatch = String(rawDate).match(/\(([가-힣a-zA-Z])\)/);
-          if (dowMatch) {
-              dow = dowMatch[1];
-          } else {
-              // 요일이 없으면 날짜를 통해 계산
-              const dateObj = new Date(year, month - 1, day);
-              const days = ['일', '월', '화', '수', '목', '금', '토'];
-              dow = days[dateObj.getDay()];
-          }
-
-          const paddedMonth = String(month).padStart(2, '0');
-          const paddedDay = String(day).padStart(2, '0');
-
-          return `${year}/${paddedMonth}/${paddedDay}(${dow})`;
-      };
-
-      const generatePersonalTimetableCsv = (data, metadata, headerInputs) => {
-        const studentSchedules = new Map();
-        const timeSlotSet = new Set();
-
-        data.forEach(entry => {
-          if (!entry.학번 || !entry.이름 || !entry.날짜 || !entry.교시 || !entry.과목) return;
-          if (isNaN(parseInt(entry.교시, 10))) return;
-
-          if (!studentSchedules.has(entry.학번)) {
-            studentSchedules.set(entry.학번, { name: entry.이름, exams: {} });
-          }
-          const studentData = studentSchedules.get(entry.학번);
-          if (studentData) {
-            studentData.exams[getTimeSlotKey(entry.날짜, entry.교시)] = entry.과목;
-          }
-          timeSlotSet.add(getTimeSlotKey(entry.날짜, entry.교시));
-        });
-
-        const sortedTimeSlots = Array.from(timeSlotSet).map(s => {
-          const [date, period] = s.split('|');
-          return { date, period: parseInt(period) };
-        }).sort((a, b) => {
-          const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
-          const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
-          if (dateA.getTime() !== dateB.getTime()) {
-            return dateA.getTime() - dateB.getTime();
-          }
-          return a.period - b.period;
-        });
-
-        const csvRows = [];
-        const headerRow1 = ['날짜', ''];
-        const dateColspans = {};
-        sortedTimeSlots.forEach(slot => {
-          dateColspans[slot.date] = (dateColspans[slot.date] || 0) + 1;
-        });
-
-        const processedDates = new Set();
-        sortedTimeSlots.forEach(slot => {
-          if (!processedDates.has(slot.date)) {
+// ── 통합 CSV 생성 ──
+const generatePersonalTimetableCsv = (data, metadata, headerInputs) => {
+    const studentSchedules = new Map();
+    const timeSlotSet = new Set();
+    data.forEach(entry => {
+        if (!entry.학번 || !entry.이름 || !entry.날짜 || !entry.교시 || !entry.과목) return;
+        if (isNaN(parseInt(entry.교시, 10))) return;
+        if (!studentSchedules.has(entry.학번)) studentSchedules.set(entry.학번, { name: entry.이름, exams: {} });
+        const studentData = studentSchedules.get(entry.학번);
+        if (studentData) studentData.exams[getTimeSlotKey(entry.날짜, entry.교시)] = entry.과목;
+        timeSlotSet.add(getTimeSlotKey(entry.날짜, entry.교시));
+    });
+    const sortedTimeSlots = Array.from(timeSlotSet).map(s => {
+        const [date, period] = s.split('|');
+        return { date, period: parseInt(period) };
+    }).sort((a, b) => {
+        const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
+        const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
+        return dateA - dateB || a.period - b.period;
+    });
+    const csvRows = [];
+    const headerRow1 = ['날짜', ''];
+    const dateColspans = {};
+    sortedTimeSlots.forEach(slot => { dateColspans[slot.date] = (dateColspans[slot.date] || 0) + 1; });
+    const processedDates = new Set();
+    sortedTimeSlots.forEach(slot => {
+        if (!processedDates.has(slot.date)) {
             headerRow1.push(slot.date);
-            for (let i = 1; i < dateColspans[slot.date]; i++) {
-              headerRow1.push('');
-            }
+            for (let i = 1; i < dateColspans[slot.date]; i++) headerRow1.push('');
             processedDates.add(slot.date);
-          }
+        }
+    });
+    csvRows.push(headerRow1);
+    const headerRow2 = ['과목', ''];
+    sortedTimeSlots.forEach(slot => { const key = getTimeSlotKey(slot.date, slot.period); headerRow2.push(headerInputs[key]?.subject || ''); });
+    csvRows.push(headerRow2);
+    const headerRow3 = ['교시', ''];
+    sortedTimeSlots.forEach(slot => headerRow3.push(String(slot.period)));
+    csvRows.push(headerRow3);
+    const headerRow4 = ['학번', '이름'];
+    sortedTimeSlots.forEach(slot => { const key = getTimeSlotKey(slot.date, slot.period); headerRow4.push(headerInputs[key]?.time || ''); });
+    csvRows.push(headerRow4);
+    const sortedStudentIds = Array.from(studentSchedules.keys()).sort();
+    sortedStudentIds.forEach(studentId => {
+        const studentData = studentSchedules.get(studentId);
+        if (!studentData) return;
+        const row = [studentId, studentData.name];
+        sortedTimeSlots.forEach(slot => { const key = getTimeSlotKey(slot.date, slot.period); row.push(studentData.exams[key] || ''); });
+        csvRows.push(row);
+    });
+    const bom = '\uFEFF';
+    const csvString = csvRows.map(row => row.map(cell => {
+        const newCell = String(cell).replace(/"/g, '""');
+        return (newCell.includes(',') || newCell.includes('"') || newCell.includes('\n')) ? `"${newCell}"` : newCell;
+    }).join(',')).join('\n');
+    return { csvString: bom + csvString, csvRows };
+};
+
+// ── 개인별 학생 데이터 생성 ──
+const generateIndividualStudentData = (parsedData, headerInputs) => {
+    const studentMap = new Map();
+    parsedData.forEach(entry => {
+        if (!entry.학번 || !entry.이름 || !entry.날짜 || !entry.교시 || !entry.과목) return;
+        const period = parseInt(entry.교시, 10);
+        if (isNaN(period)) return;
+        if (!studentMap.has(entry.학번)) {
+            studentMap.set(entry.학번, { studentId: entry.학번, name: entry.이름, exams: [] });
+        }
+        const slotKey = getTimeSlotKey(entry.날짜, entry.교시);
+        const slotInfo = headerInputs[slotKey] || {};
+        // 소스 데이터의 코드/고사실 우선 사용, 없으면 수동 입력값 사용
+        const srcCode = entry['코드'] !== undefined && entry['코드'] !== '' ? String(entry['코드']) : null;
+        const srcLocation = entry['고사실'] || entry['시험장소'] || entry['시험 장소'] || null;
+        studentMap.get(entry.학번).exams.push({
+            date: entry.날짜,
+            period,
+            subject: entry.과목,
+            code: srcCode !== null ? srcCode : (slotInfo.code || ''),
+            location: srcLocation !== null ? srcLocation : (slotInfo.location || ''),
+            time: slotInfo.time || '',
+            notes: entry['비고'] || entry['비 고'] || slotInfo.notes || ''
         });
-        csvRows.push(headerRow1);
+    });
+    return Array.from(studentMap.values())
+        .sort((a, b) => a.studentId.localeCompare(b.studentId, undefined, { numeric: true }))
+        .map(student => ({
+            ...student,
+            exams: student.exams.sort((a, b) => {
+                const da = new Date(a.date.split('(')[0].replace(/\//g, '-'));
+                const db = new Date(b.date.split('(')[0].replace(/\//g, '-'));
+                return da - db || a.period - b.period;
+            })
+        }));
+};
 
-        const headerRow2 = ['과목', ''];
-        sortedTimeSlots.forEach(slot => {
-          const key = getTimeSlotKey(slot.date, slot.period);
-          headerRow2.push(headerInputs[key]?.subject || '');
-        });
-        csvRows.push(headerRow2);
+// ── 개인 카드 HTML 생성 (인쇄 팝업용) ──
+const buildStudentCardHtml = (student, meta, logo) => {
+    const examLabel = meta.examType === 'midterm' ? '중간고사' : '기말고사';
+    const rows = student.exams.map((exam, i) => {
+        const isNewDate = i > 0 && exam.date !== student.exams[i-1].date;
+        // 날짜가 바뀌는 행은 두꺼운 윗선으로 구분
+        const dateSepTop = isNewDate ? 'border-top:1.5px solid #b0bec5!important;' : '';
+        const cellBase = `border:1px solid #e2e8f0;padding:7px 8px;text-align:center;vertical-align:middle;${dateSepTop}`;
+        return `
+        <tr style="background:${i%2===0?'#ffffff':'#f8fafc'}">
+            <td style="${cellBase}">
+                <div style="font-weight:600;font-size:9pt;color:#0f172a;">${exam.date}</div>
+                ${exam.time ? `<div style="font-size:7.5pt;color:#64748b;margin-top:2px;">${exam.time}</div>` : ''}
+            </td>
+            <td style="${cellBase}font-weight:700;font-size:9.5pt;color:#1e3a8a;">${exam.period}교시</td>
+            <td style="${cellBase}font-weight:600;font-size:9.5pt;color:#0f172a;">${exam.subject}</td>
+            <td style="${cellBase}font-size:9pt;color:#475569;">${exam.code||''}</td>
+            <td style="${cellBase}font-weight:500;font-size:9pt;color:#1e293b;">${exam.location||''}</td>
+            <td style="${cellBase}font-size:9pt;color:#64748b;">${exam.notes||''}</td>
+        </tr>`;
+    }).join('');
+    return `<div class="student-card">
+        <div class="card-hdr">
+            <div>
+                <div class="card-yr">${meta.year}학년도 ${meta.semester}학기</div>
+                <div class="card-title">${meta.grade}학년 ${examLabel} 개인별 시험 시간표</div>
+            </div>
+            ${logo ? `<img src="${logo}" style="height:26px;object-fit:contain;opacity:0.92;flex-shrink:0;" />` : ''}
+        </div>
+        <div class="card-stu">
+            <div class="stu-block">
+                <span class="stu-lbl">학번</span>
+                <span class="stu-id">${student.studentId}</span>
+            </div>
+            <div class="vsep"></div>
+            <div class="stu-block">
+                <span class="stu-lbl">성명</span>
+                <span class="stu-name">${student.name}</span>
+            </div>
+        </div>
+        <div class="card-tbl">
+            <table>
+                <thead><tr>
+                    <th style="width:14%">일시</th>
+                    <th style="width:8%">교시</th>
+                    <th style="width:22%">과목</th>
+                    <th style="width:12%">코드</th>
+                    <th style="width:22%">고사실</th>
+                    <th style="width:22%">비고</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>
+    </div>`;
+};
 
-        const headerRow3 = ['교시', ''];
-        sortedTimeSlots.forEach(slot => headerRow3.push(String(slot.period)));
-        csvRows.push(headerRow3);
+const buildIndividualPrintDoc = (students, meta, logo) => {
+    const pairs = [];
+    for (let i = 0; i < students.length; i += 2) pairs.push(students.slice(i, i + 2));
+    const pagesHtml = pairs.map(pair => `
+        <div class="card-page">
+            ${buildStudentCardHtml(pair[0], meta, logo)}
+            ${pair[1] ? `<div class="cut-sep"><div class="cut-line"></div><span class="scissors">✂</span><div class="cut-line"></div></div>${buildStudentCardHtml(pair[1], meta, logo)}` : ''}
+        </div>`).join('');
+    return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+    <title>개인별 시험 시간표</title>
+    <style>
+        @page { size: A4 portrait; margin: 8mm; }
+        @font-face { font-family: 'Pretendard'; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+        html, body { margin:0; padding:0; height:100%; background:white; font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; }
+        .card-page { height:100vh; display:flex; flex-direction:column; page-break-after:always; break-after:page; }
+        .card-page:last-child { page-break-after:avoid; break-after:avoid; }
+        .student-card { flex:1; display:flex; flex-direction:column; border:1px solid #cbd5e1; border-radius:5px; overflow:hidden; }
+        .card-hdr { background:linear-gradient(135deg,#0c1b3e 0%,#045994 100%); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+        .card-yr { color:#93c5fd; font-size:7.5pt; margin-bottom:2px; }
+        .card-title { color:white; font-weight:700; font-size:12pt; }
+        .card-stu { background:#eff6ff; padding:10px 14px; display:flex; align-items:center; gap:20px; border-bottom:1.5px solid #bfdbfe; flex-shrink:0; }
+        .stu-block { display:flex; align-items:center; gap:10px; }
+        .stu-lbl { font-size:7pt; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.08em; }
+        .stu-id { font-size:14pt; font-weight:700; color:#0f172a; letter-spacing:0.12em; }
+        .stu-name { font-size:15pt; font-weight:700; color:#0f172a; }
+        .vsep { width:1.5px; height:28px; background:#bfdbfe; flex-shrink:0; }
+        .card-tbl { flex:1; overflow:hidden; }
+        table { width:100%; border-collapse:collapse; height:100%; }
+        thead tr { background:#f1f5f9; }
+        th { border:1px solid #e2e8f0; border-bottom:1.5px solid #b0bec5; padding:7px 6px; text-align:center; font-size:9pt; font-weight:700; color:#475569; }
+        td { border:1px solid #e2e8f0; vertical-align:middle; }
+        .cut-sep { height:8mm; flex-shrink:0; display:flex; align-items:center; gap:3mm; }
+        .cut-line { flex:1; border-top:1.5px dashed #94a3b8; }
+        .scissors { color:#94a3b8; font-size:10pt; transform:rotate(10deg); display:inline-block; }
+    </style></head><body>${pagesHtml}</body></html>`;
+};
 
-        const headerRow4 = ['학번', '이름'];
-        sortedTimeSlots.forEach(slot => {
-          const key = getTimeSlotKey(slot.date, slot.period);
-          headerRow4.push(headerInputs[key]?.time || '');
-        });
-        csvRows.push(headerRow4);
 
-        const sortedStudentIds = Array.from(studentSchedules.keys()).sort();
-        sortedStudentIds.forEach(studentId => {
-          const studentData = studentSchedules.get(studentId);
-          if (!studentData) return;
+// ==========================================
+// UI 컴포넌트
+// ==========================================
 
-          const row = [studentId, studentData.name];
-          sortedTimeSlots.forEach(slot => {
-            const key = getTimeSlotKey(slot.date, slot.period);
-            row.push(studentData.exams[key] || '');
-          });
-          csvRows.push(row);
-        });
-
-        const bom = '\uFEFF';
-        const csvString = csvRows.map(row =>
-          row.map(cell => {
-            const newCell = String(cell).replace(/"/g, '""');
-            if (newCell.includes(',') || newCell.includes('"') || newCell.includes('\n')) {
-              return `"${newCell}"`;
-            }
-            return newCell;
-          }).join(',')
-        ).join('\n');
-
-        return { csvString: bom + csvString, csvRows };
-      };
-
-      // ==========================================
-      // UI 컴포넌트
-      // ==========================================
-      
-      const Card = ({ children, className = '', title, badgeText, icon, theme = 'blue' }) => {
-        const themeConfig = {
-            blue: { border: 'bg-blue-500', icon: 'text-blue-500', badge: 'text-blue-700 bg-blue-50 font-bold' },
-            teal: { border: 'bg-teal-400', icon: 'text-teal-500', badge: 'text-teal-700 bg-teal-50 font-bold' },
-            indigo: { border: 'bg-indigo-500', icon: 'text-indigo-500', badge: 'text-indigo-700 bg-indigo-50 font-bold' },
-            purple: { border: 'bg-purple-500', icon: 'text-purple-500', badge: 'text-purple-700 bg-purple-50 font-bold' }
-        };
-        const currentTheme = themeConfig[theme] || themeConfig.blue;
-
-        return (
-            <div className={`bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col ${className}`}>
-                <div className={`absolute top-0 left-0 right-0 h-1.5 ${currentTheme.border}`}></div>
-                <div className="p-6 sm:p-8 flex-grow flex flex-col">
-                    {(title || badgeText) && (
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="flex items-center gap-3">
-                                {icon && <div className={currentTheme.icon}>{icon}</div>}
-                                {title && <h3 className="text-xl font-bold text-slate-800">{title}</h3>}
-                            </div>
-                            {badgeText && (
-                                <span className={`px-3 py-1 text-xs rounded-lg tracking-wider ${currentTheme.badge}`}>
-                                    {badgeText}
-                                </span>
-                            )}
+const Card = ({ children, className = '', title, badgeText, icon, theme = 'blue' }) => {
+    const themeConfig = {
+        blue:   { border: 'bg-blue-500',   icon: 'text-blue-500',   badge: 'text-blue-700 bg-blue-50 font-bold' },
+        teal:   { border: 'bg-teal-400',   icon: 'text-teal-500',   badge: 'text-teal-700 bg-teal-50 font-bold' },
+        indigo: { border: 'bg-indigo-500', icon: 'text-indigo-500', badge: 'text-indigo-700 bg-indigo-50 font-bold' },
+        purple: { border: 'bg-purple-500', icon: 'text-purple-500', badge: 'text-purple-700 bg-purple-50 font-bold' },
+        amber:  { border: 'bg-amber-400',  icon: 'text-amber-500',  badge: 'text-amber-700 bg-amber-50 font-bold' },
+    };
+    const t = themeConfig[theme] || themeConfig.blue;
+    return (
+        <div className={`bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden flex flex-col ${className}`}>
+            <div className={`absolute top-0 left-0 right-0 h-1.5 ${t.border}`}></div>
+            <div className="p-6 sm:p-8 flex-grow flex flex-col">
+                {(title || badgeText) && (
+                    <div className="flex justify-between items-start mb-5">
+                        <div className="flex items-center gap-3">
+                            {icon && <div className={t.icon}>{icon}</div>}
+                            {title && <h3 className="text-xl font-bold text-slate-800">{title}</h3>}
                         </div>
-                    )}
-                    <div className="flex-grow">
-                        {children}
+                        {badgeText && <span className={`px-3 py-1 text-xs rounded-lg tracking-wider ${t.badge}`}>{badgeText}</span>}
                     </div>
+                )}
+                <div className="flex-grow">{children}</div>
+            </div>
+        </div>
+    );
+};
+
+const InputBox = ({ label, type = "text", value, onChange, name }) => (
+    <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+        <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
+        <input type={type} name={name} value={value} onChange={onChange} className="w-full bg-transparent border-none p-0 text-lg font-bold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300" />
+    </div>
+);
+
+const SelectBox = ({ label, value, onChange, name, options }) => (
+    <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+        <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
+        <select name={name} value={value} onChange={onChange} className="w-full bg-transparent border-none p-0 text-base font-bold text-slate-800 focus:outline-none focus:ring-0 cursor-pointer">
+            {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </select>
+    </div>
+);
+
+// ── 시간표 슬롯 입력 테이블 ──
+const SlotConfigSection = ({ timeSlots, headerInputs, onChange, hasSourceCodes, hasSourceLocations }) => {
+    if (!timeSlots || timeSlots.length === 0) return null;
+    const showCode = !hasSourceCodes;
+    const showLoc = !hasSourceLocations;
+    return (
+        <Card title="시험 상세 정보 입력" badgeText="SLOT CONFIG" theme="amber"
+            icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>}
+        >
+            <p className="text-sm text-slate-500 mb-4 -mt-2">
+                개인별 시간표에 표시될 각 교시의 시험 시간과 비고를 입력하세요.
+                {(hasSourceCodes || hasSourceLocations) && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        {hasSourceCodes && '코드'}
+                        {hasSourceCodes && hasSourceLocations && ' · '}
+                        {hasSourceLocations && '고사실'}
+                        {' '}정보는 업로드한 파일에서 자동으로 불러옵니다.
+                    </span>
+                )}
+            </p>
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="bg-slate-50 border-b-2 border-slate-200">
+                            <th className="py-3 px-4 text-left font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">날짜</th>
+                            <th className="py-3 px-4 text-center font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">교시</th>
+                            <th className="py-3 px-4 text-left font-bold text-slate-500 whitespace-nowrap text-xs uppercase tracking-wider">과목 (자동)</th>
+                            <th className="py-3 px-4 text-left font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">시험 시간</th>
+                            {showCode && <th className="py-3 px-4 text-left font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">코드</th>}
+                            {showLoc  && <th className="py-3 px-4 text-left font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">고사실</th>}
+                            <th className="py-3 px-4 text-left font-bold text-slate-600 whitespace-nowrap text-xs uppercase tracking-wider">비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {timeSlots.map((slot, idx) => {
+                            const key = getTimeSlotKey(slot.date, slot.period);
+                            const info = headerInputs[key] || {};
+                            const inputCls = "w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-400 transition-all placeholder-slate-300";
+                            return (
+                                <tr key={key} className={`border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}`}>
+                                    <td className="py-2.5 px-4 font-semibold text-slate-700 whitespace-nowrap text-sm">{slot.date}</td>
+                                    <td className="py-2.5 px-4 text-center">
+                                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-bold text-sm">{slot.period}</span>
+                                    </td>
+                                    <td className="py-2.5 px-4 text-slate-400 text-xs max-w-[120px] truncate">{info.subject || '—'}</td>
+                                    <td className="py-2.5 px-4 min-w-[130px]">
+                                        <input type="text" value={info.time||''} onChange={e=>onChange(key,'time',e.target.value)} placeholder="예: 9:00~10:20" className={inputCls} />
+                                    </td>
+                                    {showCode && (
+                                        <td className="py-2.5 px-4 min-w-[100px]">
+                                            <input type="text" value={info.code||''} onChange={e=>onChange(key,'code',e.target.value)} placeholder="코드" className={inputCls} />
+                                        </td>
+                                    )}
+                                    {showLoc && (
+                                        <td className="py-2.5 px-4 min-w-[130px]">
+                                            <input type="text" value={info.location||''} onChange={e=>onChange(key,'location',e.target.value)} placeholder="예: 3-1교실" className={inputCls} />
+                                        </td>
+                                    )}
+                                    <td className="py-2.5 px-4 min-w-[110px]">
+                                        <input type="text" value={info.notes||''} onChange={e=>onChange(key,'notes',e.target.value)} placeholder="비고" className={inputCls} />
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
+    );
+};
+
+// ── 개인 카드 화면 미리보기 컴포넌트 ──
+const IndividualStudentCard = ({ student, metadata, logoSrc }) => {
+    const examLabel = metadata.examType === 'midterm' ? '중간고사' : '기말고사';
+    return (
+        <div className="individual-card-screen">
+            {/* 헤더 */}
+            <div className="ic-header">
+                <div>
+                    <p className="text-blue-300 text-xs font-medium mb-0.5">{metadata.year}학년도 {metadata.semester}학기</p>
+                    <p className="text-white font-bold text-sm leading-tight">{metadata.grade}학년 {examLabel} 개인별 시험 시간표</p>
+                </div>
+                {logoSrc && <img src={logoSrc} alt="logo" className="h-7 object-contain opacity-90 flex-shrink-0 ml-3" />}
+            </div>
+            {/* 학생 정보 */}
+            <div className="ic-student-info">
+                <div className="flex items-center gap-2.5">
+                    <span className="text-[10px] font-black text-blue-500 tracking-widest uppercase">학번</span>
+                    <span className="font-bold text-slate-800 text-base tracking-widest">{student.studentId}</span>
+                </div>
+                <div className="w-px h-6 bg-blue-200 flex-shrink-0"></div>
+                <div className="flex items-center gap-2.5">
+                    <span className="text-[10px] font-black text-blue-500 tracking-widest uppercase">성명</span>
+                    <span className="font-bold text-slate-800 text-lg">{student.name}</span>
                 </div>
             </div>
-        );
-      };
-
-      const InputBox = ({ label, type = "text", value, onChange, name }) => (
-        <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
-            <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
-            <input 
-                type={type} 
-                name={name} 
-                value={value} 
-                onChange={onChange} 
-                className="w-full bg-transparent border-none p-0 text-lg font-bold text-slate-800 focus:outline-none focus:ring-0 placeholder-slate-300"
-            />
+            {/* 테이블 */}
+            <div className="ic-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>일시</th>
+                            <th>교시</th>
+                            <th>과목</th>
+                            <th>코드</th>
+                            <th>고사실</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {student.exams.map((exam, idx) => {
+                            const isNewDate = idx > 0 && exam.date !== student.exams[idx-1].date;
+                            const sepStyle = isNewDate ? { borderTop: '1.5px solid #b0bec5' } : {};
+                            return (
+                                <tr key={idx}>
+                                    <td className="py-2 px-2 text-center" style={sepStyle}>
+                                        <div className="font-semibold text-slate-800 text-xs">{exam.date}</div>
+                                        {exam.time && <div className="text-slate-500 text-[10px] mt-0.5">{exam.time}</div>}
+                                    </td>
+                                    <td className="py-2 px-2 text-center font-bold text-blue-800 text-xs" style={sepStyle}>{exam.period}교시</td>
+                                    <td className="py-2 px-2 text-center font-semibold text-slate-800 text-xs break-keep" style={sepStyle}>{exam.subject}</td>
+                                    <td className="py-2 px-2 text-center text-slate-500 text-xs" style={sepStyle}>{exam.code}</td>
+                                    <td className="py-2 px-2 text-center text-slate-700 font-medium text-xs" style={sepStyle}>{exam.location}</td>
+                                    <td className="py-2 px-2 text-center text-slate-400 text-xs" style={sepStyle}>{exam.notes}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
         </div>
-      );
+    );
+};
 
-      const SelectBox = ({ label, value, onChange, name, options }) => (
-        <div className="bg-slate-50 p-4 rounded-2xl border border-transparent focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
-            <label className="block text-sm font-semibold text-slate-500 mb-1">{label}</label>
-            <select 
-                name={name} 
-                value={value} 
-                onChange={onChange} 
-                className="w-full bg-transparent border-none p-0 text-base font-bold text-slate-800 focus:outline-none focus:ring-0 cursor-pointer"
-            >
-                {options.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-            </select>
+// ── 통합 시간표 테이블 ──
+const TimetablePreviewTable = ({ data }) => {
+    if (!data || data.length === 0) return null;
+    const headerRows = data.slice(0, 4);
+    const bodyRows = data.slice(4);
+    const numberOfTimeSlots = data.length > 0 ? data[0].length - 2 : 0;
+    const subjectsRow = headerRows[1] || [];
+    const bodyCell = "border border-slate-200 py-1.5 px-1.5 sm:px-2 text-center align-middle text-xs sm:text-sm break-keep";
+    const headerCell = "border border-slate-200 py-2 px-1.5 sm:px-2 text-center align-middle font-bold bg-slate-50 text-slate-700 text-xs sm:text-sm break-keep";
+    return (
+        <div id="timetable-scroll-container" className="overflow-x-auto mt-4 rounded-xl border border-slate-200 print:border-none print:overflow-hidden print:h-full print:mt-0 print:rounded-none">
+            <table className="w-full border-collapse table-auto print:table-fixed bg-white print:h-full">
+                <colgroup>
+                    <col style={{ width: '60px' }} /><col style={{ width: '80px' }} />
+                    {Array.from({ length: numberOfTimeSlots }).map((_, i) => {
+                        const subject = subjectsRow[i + 2] || '';
+                        const subjectName = subject.split(',')[0].trim();
+                        let w = 100;
+                        if (subjectName.includes('사회문제탐구')) w = 110;
+                        else if (subjectName.includes('영어독해와작문')) w = 140;
+                        return <col key={i} style={{ width: `${w}px` }} />;
+                    })}
+                </colgroup>
+                <thead>
+                    {headerRows.map((row, rIndex) => (
+                        <tr key={rIndex}>
+                            {rIndex === 0 ? (
+                                (() => {
+                                    const cells = [];
+                                    cells.push(<th key="h0-0" colSpan={2} className={headerCell}>{row[0]}</th>);
+                                    let i = 2;
+                                    while (i < row.length) {
+                                        const cell = row[i]; let colspan = 1;
+                                        while (i + colspan < row.length && !row[i + colspan]) colspan++;
+                                        cells.push(<th key={i} colSpan={colspan} className={headerCell}>{cell}</th>);
+                                        i += colspan;
+                                    }
+                                    return cells;
+                                })()
+                            ) : rIndex < 3 ? (
+                                <>
+                                    <th colSpan={2} className={headerCell}>{row[0]}</th>
+                                    {row.slice(2).map((cell, cIndex) => (
+                                        <th key={cIndex} className={headerCell}>
+                                            {rIndex === 1 && cell.includes(',') ? cell.split(',').map((part, i) => (<Fragment key={i}>{i > 0 && <br />}{part.trim()}</Fragment>)) : cell}
+                                        </th>
+                                    ))}
+                                </>
+                            ) : (
+                                row.map((cell, cIndex) => {
+                                    if (cIndex >= 2) {
+                                        const timeRegex = /(\d{1,2}:\d{2}~\d{1,2}:\d{2})/;
+                                        const match = cell.match(timeRegex);
+                                        if (match) {
+                                            const timePart = match[0]; const restPart = cell.replace(timeRegex, '').trim();
+                                            return (<th key={cIndex} className={headerCell}>{timePart}{restPart && <><br/><span className="text-slate-500 font-normal">{restPart}</span></>}</th>);
+                                        }
+                                    }
+                                    return <th key={cIndex} className={headerCell}>{cell}</th>;
+                                })
+                            )}
+                        </tr>
+                    ))}
+                </thead>
+                <tbody>
+                    {bodyRows.map((row, rIndex) => (
+                        <tr key={rIndex} className="hover:bg-blue-50/50 transition-colors">
+                            {row.map((cell, cIndex) => (
+                                <td key={cIndex} className={`${bodyCell} ${cIndex < 2 ? 'font-semibold bg-slate-50/50' : ''}`}>{cell}</td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
-      );
+    );
+};
 
-      const TimetablePreviewTable = ({ data }) => {
-          if (!data || data.length === 0) return null;
 
-          const headerRows = data.slice(0, 4);
-          const bodyRows = data.slice(4);
-          const numberOfTimeSlots = data.length > 0 ? data[0].length - 2 : 0;
-          const subjectsRow = headerRows[1] || [];
+// ==========================================
+// 메인 앱
+// ==========================================
+const App = () => {
+    const [metadata, setMetadata] = useState({ year: new Date().getFullYear().toString(), semester: '1', grade: '3', examType: 'midterm' });
+    const [file, setFile] = useState(null);
+    const [logoSrc, setLogoSrc] = useState(null);
+    const [parsedData, setParsedData] = useState(null);
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [headerInputs, setHeaderInputs] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [generatedCsvContent, setGeneratedCsvContent] = useState(null);
+    const [generatedCsvRows, setGeneratedCsvRows] = useState(null);
+    const [individualStudents, setIndividualStudents] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [selectedClass, setSelectedClass] = useState('all');
+    const [viewMode, setViewMode] = useState('individual'); // 'grid' | 'individual'
+    const [hasSourceCodes, setHasSourceCodes] = useState(false);
+    const [hasSourceLocations, setHasSourceLocations] = useState(false);
 
-          const bodyCellClasses = "border border-slate-200 py-1.5 px-1.5 sm:px-2 text-center align-middle text-xs sm:text-sm break-keep";
-          const headerCellClasses = "border border-slate-200 py-2 px-1.5 sm:px-2 text-center align-middle font-bold bg-slate-50 text-slate-700 text-xs sm:text-sm break-keep";
+    const handleMetadataChange = (e) => { const { name, value } = e.target; setMetadata(prev => ({ ...prev, [name]: value })); };
 
-          return (
-              <div id="timetable-scroll-container" className="overflow-x-auto mt-4 rounded-xl border border-slate-200 print:border-none print:overflow-hidden print:h-full print:mt-0 print:rounded-none">
-                  <table className="w-full border-collapse table-auto print:table-fixed bg-white print:h-full">
-                      <colgroup>
-                          <col style={{ width: '60px' }} />
-                          <col style={{ width: '80px' }} />
-                          {Array.from({ length: numberOfTimeSlots }).map((_, i) => {
-                              let finalWidth = 100; 
-                              const subject = subjectsRow[i + 2] || '';
-                              const subjectName = subject.split(',')[0].trim();
-                              
-                              if (subjectName.includes('사회문제탐구')) {
-                                  finalWidth = 110; 
-                              } else if (subjectName.includes('영어독해와작문')) {
-                                  finalWidth = 140;
-                              }
-                              return <col key={i} style={{ width: `${finalWidth}px` }} />;
-                          })}
-                      </colgroup>
-                      <thead>
-                          {headerRows.map((row, rIndex) => (
-                              <tr key={rIndex}>
-                                  {rIndex === 0 ? (
-                                      (() => {
-                                          const cells = [];
-                                          cells.push(<th key="h0-0" colSpan={2} className={headerCellClasses}>{row[0]}</th>);
-                                          let i = 2;
-                                          while (i < row.length) {
-                                              const cell = row[i];
-                                              let colspan = 1;
-                                              while (i + colspan < row.length && !row[i + colspan]) {
-                                                  colspan++;
-                                              }
-                                              cells.push(<th key={i} colSpan={colspan} className={headerCellClasses}>{cell}</th>);
-                                              i += colspan;
-                                          }
-                                          return cells;
-                                      })()
-                                  ) : rIndex < 3 ? (
-                                      <>
-                                          <th colSpan={2} className={headerCellClasses}>{row[0]}</th>
-                                          {row.slice(2).map((cell, cIndex) => (
-                                              <th key={cIndex} className={headerCellClasses}>
-                                                  {rIndex === 1 && cell.includes(',') ? (
-                                                      cell.split(',').map((part, i) => (
-                                                          <Fragment key={i}>
-                                                              {i > 0 && <br />}
-                                                              {part.trim()}
-                                                          </Fragment>
-                                                      ))
-                                                  ) : (
-                                                      cell
-                                                  )}
-                                              </th>
-                                          ))}
-                                      </>
-                                  ) : (
-                                      row.map((cell, cIndex) => {
-                                          if (cIndex >= 2) {
-                                              const timeRegex = /(\d{1,2}:\d{2}~\d{1,2}:\d{2})/;
-                                              const match = cell.match(timeRegex);
+    const handleLogoChange = (e) => {
+        const f = e.target.files?.[0];
+        if (f && f.type.startsWith('image/')) {
+            setError(null);
+            const reader = new FileReader();
+            reader.onload = (evt) => setLogoSrc(evt.target?.result);
+            reader.readAsDataURL(f);
+        } else if (f) { setError('이미지 파일(jpg, png 등)을 선택해주세요.'); }
+    };
 
-                                              if (match) {
-                                                  const timePart = match[0];
-                                                  const restPart = cell.replace(timeRegex, '').trim();
+    const handleHeaderInputChange = useCallback((key, field, value) => {
+        setHeaderInputs(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    }, []);
 
-                                                  return (
-                                                      <th key={cIndex} className={headerCellClasses}>
-                                                          {timePart}
-                                                          {restPart && (
-                                                              <>
-                                                                  <br />
-                                                                  <span className="text-slate-500 font-normal whitespace-nowrap print:whitespace-normal">{restPart}</span>
-                                                              </>
-                                                          )}
-                                                      </th>
-                                                  );
-                                              }
-                                          }
-                                          return <th key={cIndex} className={headerCellClasses}>{cell}</th>;
-                                      })
-                                  )}
-                              </tr>
-                          ))}
-                      </thead>
-                      <tbody>
-                          {bodyRows.map((row, rIndex) => (
-                              <tr key={rIndex} className="hover:bg-blue-50/50 transition-colors">
-                                  {row.map((cell, cIndex) => (
-                                      <td key={cIndex} className={`${bodyCellClasses} ${cIndex < 2 ? 'font-semibold bg-slate-50/50' : ''}`}>
-                                        {cell}
-                                      </td>
-                                  ))}
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-          );
-      };
+    const extractTimeSlotsAndHeaders = (data) => {
+        const timeSlotSet = new Set();
+        data.forEach(entry => { if (entry.날짜 && String(entry.교시).trim()) timeSlotSet.add(`${entry.날짜}|${entry.교시}`); });
+        const calculated = Array.from(timeSlotSet)
+            .map(s => { if (!s.includes('|')) return null; const [date, pStr] = s.split('|'); const period = parseInt(pStr, 10); return (!isNaN(period) && date) ? { date, period } : null; })
+            .filter(Boolean)
+            .sort((a, b) => { const da = new Date(a.date.split('(')[0].replace(/\//g, '-')); const db = new Date(b.date.split('(')[0].replace(/\//g, '-')); return da - db || a.period - b.period; });
+        setTimeSlots(calculated);
+        const subjectsBySlot = {};
+        data.forEach(entry => {
+            if (isNaN(parseInt(entry.교시, 10))) return;
+            const key = `${entry.날짜}|${entry.교시}`;
+            if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
+            subjectsBySlot[key].add(entry.과목);
+        });
+        const initial = calculated.reduce((acc, slot) => {
+            const key = `${slot.date}|${slot.period}`;
+            const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
+            acc[key] = { subject: subjects.replace(/\s*\(.*?\)\s*/g, '').trim(), time: '', code: '', location: '', notes: '' };
+            return acc;
+        }, {});
+        setHeaderInputs(initial);
+        // 소스 데이터에 코드/고사실 컬럼 존재 여부 감지
+        if (data.length > 0) {
+            const sampleEntry = data.find(e => e.학번) || data[0];
+            setHasSourceCodes('코드' in sampleEntry && String(sampleEntry['코드'] || '').trim() !== '');
+            setHasSourceLocations('고사실' in sampleEntry && String(sampleEntry['고사실'] || '').trim() !== '');
+        }
+    };
 
-      const App = () => {
-        const [metadata, setMetadata] = useState({ year: new Date().getFullYear().toString(), semester: '1', grade: '3', examType: 'midterm' });
-        const [file, setFile] = useState(null);
-        const [logoSrc, setLogoSrc] = useState(null);
-        const [parsedData, setParsedData] = useState(null);
-        const [timeSlots, setTimeSlots] = useState([]);
-        const [headerInputs, setHeaderInputs] = useState({});
-        const [isLoading, setIsLoading] = useState(false);
-        const [error, setError] = useState(null);
-        const [generatedCsvContent, setGeneratedCsvContent] = useState(null);
-        const [generatedCsvRows, setGeneratedCsvRows] = useState(null);
-        const [isDragging, setIsDragging] = useState(false);
-        const [selectedClass, setSelectedClass] = useState('all');
+    const processFile = useCallback(async (selectedFile) => {
+        if (!selectedFile) return;
+        const fileName = selectedFile.name.toLowerCase();
+        const isCsv = selectedFile.type === 'text/csv' || fileName.endsWith('.csv');
+        const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || selectedFile.type.includes('spreadsheet');
+        if (!isCsv && !isExcel) { setError('잘못된 파일 형식입니다. CSV 또는 Excel 파일을 업로드해주세요.'); return; }
+        setFile(selectedFile); setError(null); setParsedData(null); setTimeSlots([]); setHeaderInputs({});
+        setGeneratedCsvContent(null); setGeneratedCsvRows(null); setIndividualStudents(null); setSelectedClass('all');
+        setHasSourceCodes(false); setHasSourceLocations(false);
 
-        const handleMetadataChange = (e) => {
-          const { name, value } = e.target;
-          setMetadata(prev => ({ ...prev, [name]: value }));
-        };
+        if (isExcel) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const wb = XLSX.read(event.target?.result, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    if (!rows || rows.length < 2) { setError('Excel 파일에 데이터가 없습니다.'); return; }
+                    const headers = rows[0].map(h => String(h || '').trim().replace(/^\uFEFF/, ''));
+                    const cleanData = rows.slice(1).map(row => {
+                        const obj = {};
+                        headers.forEach((h, i) => { obj[h] = String(row[i] || '').trim(); });
+                        if (obj['날짜']) obj['날짜'] = formatUniformDate(obj['날짜'], metadata.year);
+                        return obj;
+                    });
+                    if (!cleanData[0] || !('학번' in cleanData[0] && '이름' in cleanData[0] && '날짜' in cleanData[0] && '교시' in cleanData[0] && '과목' in cleanData[0])) {
+                        setError('Excel 파일의 헤더가 올바르지 않습니다. "학번,이름,날짜,교시,과목" 열이 포함되어 있는지 확인해주세요.'); return;
+                    }
+                    setParsedData(cleanData); extractTimeSlotsAndHeaders(cleanData);
+                } catch (err) { setError(`Excel 파싱 오류: ${err.message}`); }
+            };
+            reader.onerror = () => setError('파일을 읽는 중 오류가 발생했습니다.');
+            reader.readAsArrayBuffer(selectedFile); return;
+        }
 
-        const handleLogoChange = (e) => {
-          const file = e.target.files?.[0];
-          if (file && file.type.startsWith('image/')) {
-              setError(null);
-              const reader = new FileReader();
-              reader.onload = (loadEvent) => {
-                  setLogoSrc(loadEvent.target?.result);
-              };
-              reader.readAsDataURL(file);
-          } else if (file) {
-              setError('이미지 파일(jpg, png 등)을 선택해주세요.');
-          }
-        };
-
-        const processFile = useCallback(async (selectedFile) => {
-          if (!selectedFile) return;
-          
-          const fileName = selectedFile.name.toLowerCase();
-          const isCsv = selectedFile.type === 'text/csv' || fileName.endsWith('.csv');
-          const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || selectedFile.type.includes('spreadsheet');
-          
-          if (!isCsv && !isExcel) {
-              setError('잘못된 파일 형식입니다. CSV 또는 Excel 파일을 업로드해주세요.');
-              return;
-          }
-          
-          setFile(selectedFile);
-          setError(null);
-          setParsedData(null);
-          setTimeSlots([]);
-          setHeaderInputs({});
-          setGeneratedCsvContent(null);
-          setGeneratedCsvRows(null);
-          setSelectedClass('all');
-          
-          if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                  try {
-                      const arrayBuffer = event.target?.result;
-                      if (!arrayBuffer) return;
-                      
-                      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                      const sheetName = workbook.SheetNames[0];
-                      const worksheet = workbook.Sheets[sheetName];
-                      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                      
-                      if (!rows || rows.length < 2) {
-                          setError('Excel 파일에 데이터가 없습니다.');
-                          return;
-                      }
-                      
-                      const headers = rows[0];
-                      const cleanHeaders = headers.map(h => String(h || '').trim().replace(/^\uFEFF/, ''));
-                      
-                      const cleanData = rows.slice(1).map(row => {
-                          const obj = {};
-                          cleanHeaders.forEach((header, idx) => {
-                              obj[header] = String(row[idx] || '').trim();
-                          });
-                          // 엑셀에서 날짜 데이터를 파싱할 때 새로운 포맷터 적용
-                          if (obj['날짜']) {
-                              obj['날짜'] = formatUniformDate(obj['날짜'], metadata.year);
-                          }
-                          return obj;
-                      });
-                      
-                      if (!cleanData[0] || !('학번' in cleanData[0] && '이름' in cleanData[0] && '날짜' in cleanData[0] && '교시' in cleanData[0] && '과목' in cleanData[0])) {
-                          setError('Excel 파일의 헤더가 올바르지 않습니다. "학번,이름,날짜,교시,과목" 열이 포함되어 있는지 확인해주세요.');
-                          return;
-                      }
-                      
-                      setParsedData(cleanData);
-                      extractTimeSlotsAndHeaders(cleanData);
-                  } catch (err) {
-                      setError(`Excel 파싱 오류: ${err.message}`);
-                  }
-              };
-              reader.onerror = () => setError('파일을 읽는 중 오류가 발생했습니다.');
-              reader.readAsArrayBuffer(selectedFile);
-              return;
-          }
-          
-          Papa.parse(selectedFile, {
-              header: true,
-              skipEmptyLines: true,
-              encoding: "UTF-8",
-              complete: (results) => {
-                  const cleanData = results.data.map(row => {
+        Papa.parse(selectedFile, {
+            header: true, skipEmptyLines: true, encoding: "UTF-8",
+            complete: (results) => {
+                const cleanData = results.data.map(row => {
                     const newRow = {};
-                    for (const key in row) {
-                        const cleanKey = key.trim().replace(/^\uFEFF/, '');
-                        newRow[cleanKey] = row[key];
-                    }
-                    // CSV에서 날짜 데이터를 파싱할 때 새로운 포맷터 적용
-                    if (newRow['날짜']) {
-                        newRow['날짜'] = formatUniformDate(newRow['날짜'], metadata.year);
-                    }
+                    for (const key in row) { const ck = key.trim().replace(/^\uFEFF/, ''); newRow[ck] = row[key]; }
+                    if (newRow['날짜']) newRow['날짜'] = formatUniformDate(newRow['날짜'], metadata.year);
                     return newRow;
-                  });
-
-                  if (!cleanData[0] || !('학번' in cleanData[0] && '이름' in cleanData[0] && '날짜' in cleanData[0] && '교시' in cleanData[0] && '과목' in cleanData[0])) {
-                    setError('CSV 파일의 헤더가 올바르지 않습니다. "학번,이름,날짜,교시,과목" 열이 포함되어 있는지 확인해주세요.');
-                    return;
-                  }
-
-                  setParsedData(cleanData);
-                  extractTimeSlotsAndHeaders(cleanData);
-              },
-              error: (err) => setError(`CSV 파싱 오류: ${err.message}`)
-          });
-        }, [metadata.year]);
-
-        const extractTimeSlotsAndHeaders = (data) => {
-            const timeSlotSet = new Set();
-            data.forEach(entry => {
-                if (entry.날짜 && String(entry.교시).trim()) {
-                    timeSlotSet.add(`${entry.날짜}|${entry.교시}`);
-                }
-            });
-
-            const calculatedTimeSlots = Array.from(timeSlotSet)
-                .map(s => {
-                    if (!s || !s.includes('|')) return null;
-                    const [date, periodStr] = s.split('|');
-                    const period = parseInt(periodStr, 10);
-                    if (date && !isNaN(period)) return { date, period };
-                    return null;
-                })
-                .filter(Boolean)
-                .sort((a, b) => {
-                    const dateA = new Date(a.date.split('(')[0].replace(/\//g, '-'));
-                    const dateB = new Date(b.date.split('(')[0].replace(/\//g, '-'));
-                    if (dateA.getTime() !== dateB.getTime()) return dateA.getTime() - dateB.getTime();
-                    return a.period - b.period;
                 });
-            setTimeSlots(calculatedTimeSlots);
+                if (!cleanData[0] || !('학번' in cleanData[0] && '이름' in cleanData[0] && '날짜' in cleanData[0] && '교시' in cleanData[0] && '과목' in cleanData[0])) {
+                    setError('CSV 파일의 헤더가 올바르지 않습니다. "학번,이름,날짜,교시,과목" 열이 포함되어 있는지 확인해주세요.'); return;
+                }
+                setParsedData(cleanData); extractTimeSlotsAndHeaders(cleanData);
+            },
+            error: (err) => setError(`CSV 파싱 오류: ${err.message}`)
+        });
+    }, [metadata.year]);
 
-            const subjectsBySlot = {};
-            data.forEach(entry => {
-                if (isNaN(parseInt(entry.교시, 10))) return;
-                const key = `${entry.날짜}|${entry.교시}`;
-                if (!subjectsBySlot[key]) subjectsBySlot[key] = new Set();
-                subjectsBySlot[key].add(entry.과목);
-            });
+    const handleFileChange = (e) => processFile(e.target.files?.[0]);
+    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+    const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+    const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); processFile(e.dataTransfer.files?.[0]); };
 
-            const initialHeaderInputs = calculatedTimeSlots.reduce((acc, slot) => {
-                const key = `${slot.date}|${slot.period}`;
-                const subjects = Array.from(subjectsBySlot[key] || []).join(', ');
-                const cleanedSubject = subjects.replace(/\s*\(.*?\)\s*/g, '').trim();
-                acc[key] = { subject: cleanedSubject, time: '' };
-                return acc;
-            }, {});
-            setHeaderInputs(initialHeaderInputs);
-        };
-
-        const handleFileChange = (e) => processFile(e.target.files?.[0]);
-        
-        const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
-        const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
-        const handleDrop = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); processFile(e.dataTransfer.files?.[0]); };
-        
-        const handleGenerate = useCallback(() => {
-          if (!parsedData || timeSlots.length === 0) {
-            setError('데이터가 없습니다. 먼저 파일을 업로드해주세요.');
-            return;
-          }
-          
-          setError(null);
-          setIsLoading(true);
-          setGeneratedCsvContent(null);
-          setGeneratedCsvRows(null);
-
-          setTimeout(() => {
+    const handleGenerate = useCallback(() => {
+        if (!parsedData || timeSlots.length === 0) { setError('데이터가 없습니다. 먼저 파일을 업로드해주세요.'); return; }
+        setError(null); setIsLoading(true); setGeneratedCsvContent(null); setGeneratedCsvRows(null); setIndividualStudents(null);
+        setTimeout(() => {
             try {
-              const { csvString, csvRows } = generatePersonalTimetableCsv(parsedData, metadata, headerInputs);
-              setGeneratedCsvContent(csvString);
-              setGeneratedCsvRows(csvRows);
-              
-              setTimeout(() => {
-                  document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
+                const { csvString, csvRows } = generatePersonalTimetableCsv(parsedData, metadata, headerInputs);
+                setGeneratedCsvContent(csvString);
+                setGeneratedCsvRows(csvRows);
+                const students = generateIndividualStudentData(parsedData, headerInputs);
+                setIndividualStudents(students);
+                setTimeout(() => document.getElementById('result-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+            } catch (e) { setError(`생성 오류: ${e.message}`); }
+            finally { setIsLoading(false); }
+        }, 500);
+    }, [parsedData, metadata, timeSlots, headerInputs]);
 
-            } catch (e) {
-              setError(`생성 오류: ${e.message}`);
-            } finally {
-              setIsLoading(false);
+    const isGenerateDisabled = useMemo(() => isLoading || !file || !parsedData || timeSlots.length === 0, [isLoading, file, parsedData, timeSlots]);
+
+    // 학급 목록
+    const availableClasses = useMemo(() => {
+        if (!generatedCsvRows) return [];
+        const classSet = new Set();
+        generatedCsvRows.slice(4).forEach(row => {
+            const sid = row[0] || '';
+            if (sid && sid.length >= 3) {
+                const grade = sid.substring(0, 1);
+                const classNum = parseInt(sid.substring(1, 3), 10);
+                if (!isNaN(classNum)) classSet.add(`${grade}-${classNum}`);
             }
-          }, 500);
-        }, [parsedData, metadata, timeSlots, headerInputs]);
-        
-        const isGenerateDisabled = useMemo(() => {
-            return isLoading || !file || !parsedData || timeSlots.length === 0;
-        }, [isLoading, file, parsedData, timeSlots]);
+        });
+        return ['all', ...Array.from(classSet).sort((a,b) => a.localeCompare(b, undefined, {numeric:true}))];
+    }, [generatedCsvRows]);
 
-        const availableClasses = useMemo(() => {
-          if (!generatedCsvRows) return [];
-          const classSet = new Set();
-          generatedCsvRows.slice(4).forEach(row => {
-              const studentId = row[0] || '';
-              if (studentId && studentId.length >= 3) {
-                  const grade = studentId.substring(0, 1);
-                  const classNum = parseInt(studentId.substring(1, 3), 10);
-                  if (!isNaN(classNum)) {
-                      classSet.add(`${grade}-${classNum}`);
-                  }
-              }
-          });
-          return ['all', ...Array.from(classSet).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}))];
-        }, [generatedCsvRows]);
+    // 통합 시간표 필터
+    const filteredCsvRows = useMemo(() => {
+        if (!generatedCsvRows) return null;
+        if (selectedClass === 'all') return generatedCsvRows;
+        const [grade, classNumStr] = selectedClass.split('-');
+        const classPrefix = `${grade}${String(classNumStr).padStart(2, '0')}`;
+        return [...generatedCsvRows.slice(0, 4), ...generatedCsvRows.slice(4).filter(row => (row[0]||'').startsWith(classPrefix))];
+    }, [generatedCsvRows, selectedClass]);
 
-        const filteredCsvRows = useMemo(() => {
-          if (!generatedCsvRows) return null;
-          if (selectedClass === 'all') return generatedCsvRows;
-          
-          const headerRows = generatedCsvRows.slice(0, 4);
-          const bodyRows = generatedCsvRows.slice(4);
+    // 개인별 학생 필터
+    const filteredStudents = useMemo(() => {
+        if (!individualStudents) return null;
+        if (selectedClass === 'all') return individualStudents;
+        const [grade, classNumStr] = selectedClass.split('-');
+        const classPrefix = `${grade}${String(classNumStr).padStart(2, '0')}`;
+        return individualStudents.filter(s => s.studentId.startsWith(classPrefix));
+    }, [individualStudents, selectedClass]);
 
-          const [grade, classNumStr] = selectedClass.split('-');
-          const classPrefix = `${grade}${String(classNumStr).padStart(2, '0')}`;
+    // 통합 시간표 인쇄
+    const handlePrint = () => {
+        const printableElement = document.getElementById('printable-section');
+        if (!printableElement) return setError('인쇄할 내용을 찾을 수 없습니다.');
+        const printableClone = printableElement.cloneNode(true);
+        const toRemove = printableClone.querySelector('.print-hidden');
+        if (toRemove) toRemove.remove();
+        const printWindow = window.open('', '_blank', 'width=1200,height=800');
+        if (!printWindow) return setError('팝업이 차단되었습니다. 팝업을 허용해주세요.');
+        const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]')?.outerHTML || '';
+        const inlineStyles = Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('');
+        printWindow.document.write(`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>시험 시간표 인쇄</title>${tailwindScript}<style>${inlineStyles}@page{size:A4 landscape;margin:5mm;}html,body{height:100vh!important;margin:0!important;padding:0!important;overflow:hidden!important;background:white!important;}#printable-section{height:100vh!important;display:flex!important;flex-direction:column!important;}</style></head><body class="bg-white">${printableClone.innerHTML}</body></html>`);
+        printWindow.document.close();
+        setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 1000);
+    };
 
-          const filteredBodyRows = bodyRows.filter(row => {
-              const studentId = row[0] || '';
-              return studentId && studentId.startsWith(classPrefix);
-          });
+    // 개인별 시간표 인쇄
+    const handlePrintIndividual = () => {
+        if (!filteredStudents || filteredStudents.length === 0) return setError('인쇄할 학생 데이터가 없습니다.');
+        const printWindow = window.open('', '_blank', 'width=900,height=1000');
+        if (!printWindow) return setError('팝업이 차단되었습니다. 팝업을 허용해주세요.');
+        const html = buildIndividualPrintDoc(filteredStudents, metadata, logoSrc);
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 1000);
+    };
 
-          return [...headerRows, ...filteredBodyRows];
-        }, [generatedCsvRows, selectedClass]);
+    const hasResults = filteredCsvRows || filteredStudents;
 
-        const handlePrint = () => {
-          const printableElement = document.getElementById('printable-section');
-          if (!printableElement) return setError('인쇄할 내용을 찾을 수 없습니다.');
-
-          const printableClone = printableElement.cloneNode(true);
-          const controlsToRemove = printableClone.querySelector('.print-hidden');
-          if (controlsToRemove) controlsToRemove.remove();
-
-          const printWindow = window.open('', '_blank', 'width=1200,height=800');
-          if (!printWindow) return setError('팝업이 차단되었습니다. 팝업을 허용해주세요.');
-          
-          const tailwindScript = document.querySelector('script[src="https://cdn.tailwindcss.com"]').outerHTML || '';
-          const inlineStyles = Array.from(document.querySelectorAll('style')).map(style => style.innerHTML).join('');
-
-          // 팝업 창 안에서도 페이지 전체를 꽉 채우도록 스타일 강제 추가
-          printWindow.document.write(`
-              <!DOCTYPE html>
-              <html lang="ko">
-              <head>
-                  <meta charset="UTF-8">
-                  <title>시험 시간표 인쇄</title>
-                  ${tailwindScript}
-                  <style>
-                      ${inlineStyles}
-                      @page { size: A4 landscape; margin: 5mm; }
-                      html, body { 
-                          height: 100vh !important; 
-                          margin: 0 !important; 
-                          padding: 0 !important; 
-                          overflow: hidden !important; 
-                          background: white !important;
-                      }
-                      #printable-section {
-                          height: 100vh !important;
-                          display: flex !important;
-                          flex-direction: column !important;
-                      }
-                  </style>
-              </head>
-              <body class="bg-white">
-                  ${printableClone.innerHTML}
-              </body>
-              </html>
-          `);
-          
-          printWindow.document.close();
-          setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 1000);
-        };
-
-        const BookIcon = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-        );
-        const ImageIcon = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-        );
-        const UploadIcon = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-        );
-        const ClockIcon = () => (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-        );
-        
-        return (
-          <div className="flex-grow flex flex-col relative w-full">
-            
-            {/* Hero Section */}
+    return (
+        <div className="flex-grow flex flex-col relative w-full">
+            {/* Hero */}
             <div className="print-hidden bg-gradient-to-br from-[#0c1b3e] via-[#0b2b62] to-[#045994] pt-16 pb-28 px-4 text-center relative overflow-hidden flex-shrink-0">
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20 pointer-events-none">
                     <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-blue-500 blur-3xl"></div>
                     <div className="absolute top-1/2 right-0 w-80 h-80 rounded-full bg-teal-400 blur-3xl"></div>
                 </div>
-
                 <div className="relative z-10">
                     <div className="flex justify-center items-center gap-3 mb-6">
                         <span className="inline-flex items-center gap-1.5 bg-white/10 text-white px-3.5 py-1.5 rounded-full text-sm font-semibold border border-white/20 backdrop-blur-sm">
-                            <ClockIcon /> Timetable Master
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> Timetable Master
                         </span>
-                        <span className="inline-flex items-center bg-amber-400 text-amber-900 px-3 py-1.5 rounded-full text-xs font-black tracking-wider shadow-sm">
-                            DATA POWERED
-                        </span>
+                        <span className="inline-flex items-center bg-amber-400 text-amber-900 px-3 py-1.5 rounded-full text-xs font-black tracking-wider shadow-sm">DATA POWERED</span>
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">
-                        시험 시간표 자동 생성 시스템
-                    </h1>
-                    <p className="text-lg text-blue-100 max-w-2xl mx-auto font-medium">
-                        KICE 스타일의 깔끔한 분석 알고리즘으로<br className="hidden md:block"/> 
-                        학급별/개인별 시간표를 생성합니다.
-                    </p>
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 drop-shadow-md">시험 시간표 자동 생성 시스템</h1>
+                    <p className="text-lg text-blue-100 max-w-2xl mx-auto font-medium">통합 시간표 및 개인별 배부용 카드를<br className="hidden md:block"/>자동으로 생성합니다.</p>
                 </div>
             </div>
 
-            {/* 메인 래퍼: 데이터 입력 영역은 화면 중앙(최대 1152px) 정렬 */}
             <main className="w-full relative z-20 -mt-16 flex-grow flex flex-col">
-              
-              <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-                  <div className="print-hidden space-y-6">
-                    
-                    {error && (
-                        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm flex items-start gap-3">
-                            <svg className="h-5 w-5 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div>
-                                <p className="font-bold text-red-800 text-sm">오류가 발생했습니다</p>
-                                <p className="text-red-600 text-sm mt-1">{error}</p>
+                <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+                    <div className="print-hidden space-y-6">
+                        {error && (
+                            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-sm flex items-start gap-3">
+                                <svg className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <div><p className="font-bold text-red-800 text-sm">오류가 발생했습니다</p><p className="text-red-600 text-sm mt-1">{error}</p></div>
                             </div>
-                        </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card title="기본 학사 정보" badgeText="SCOPE SETTING" icon={<BookIcon/>} theme="blue">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <InputBox label="학년도" type="number" name="year" value={metadata.year} onChange={handleMetadataChange} />
-                                <InputBox label="학기" type="number" name="semester" value={metadata.semester} onChange={handleMetadataChange} />
-                                <SelectBox 
-                                    label="고사 구분" 
-                                    name="examType" 
-                                    value={metadata.examType} 
-                                    onChange={handleMetadataChange} 
-                                    options={[
-                                        { value: 'midterm', label: '중간고사' },
-                                        { value: 'final', label: '기말고사' }
-                                    ]} 
-                                />
-                                <InputBox label="학년" type="number" name="grade" value={metadata.grade} onChange={handleMetadataChange} />
-                            </div>
-                        </Card>
+                        )}
 
-                        <Card title="출력물 디자인 요소" badgeText="VISUAL SETTING" icon={<ImageIcon/>} theme="teal">
-                            <div className="h-full flex flex-col justify-center">
-                                <p className="text-sm font-semibold text-slate-500 mb-3">시간표 우측 상단에 표시될 학교 로고 (선택)</p>
-                                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 min-h-[76px]">
-                                    <input type="file" id="logo-upload" className="sr-only" accept="image/*" onChange={handleLogoChange}/>
-                                    <label
-                                        htmlFor="logo-upload"
-                                        className="cursor-pointer flex-shrink-0 px-4 py-2 text-sm font-bold rounded-xl text-teal-700 bg-teal-100 hover:bg-teal-200 transition-colors shadow-sm"
-                                    >
-                                        {logoSrc ? '로고 변경하기' : '이미지 파일 선택'}
-                                    </label>
-                                    {logoSrc ? (
-                                        <div className="flex items-center gap-3 w-full justify-between pr-2">
-                                            <img src={logoSrc} alt="미리보기" className="h-10 max-w-[120px] object-contain rounded bg-white p-1 border border-slate-200 shadow-sm" />
-                                            <button onClick={() => setLogoSrc(null)} className="text-slate-400 hover:text-red-500 transition-colors p-1" title="삭제">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* 기본 학사 정보 */}
+                            <Card title="기본 학사 정보" badgeText="SCOPE SETTING" theme="blue"
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>}
+                            >
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <InputBox label="학년도" type="number" name="year" value={metadata.year} onChange={handleMetadataChange} />
+                                    <InputBox label="학기" type="number" name="semester" value={metadata.semester} onChange={handleMetadataChange} />
+                                    <SelectBox label="고사 구분" name="examType" value={metadata.examType} onChange={handleMetadataChange} options={[{value:'midterm',label:'중간고사'},{value:'final',label:'기말고사'}]} />
+                                    <InputBox label="학년" type="number" name="grade" value={metadata.grade} onChange={handleMetadataChange} />
+                                </div>
+                            </Card>
+
+                            {/* 로고 */}
+                            <Card title="출력물 디자인 요소" badgeText="VISUAL SETTING" theme="teal"
+                                icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                            >
+                                <div className="h-full flex flex-col justify-center">
+                                    <p className="text-sm font-semibold text-slate-500 mb-3">시간표 우측 상단에 표시될 학교 로고 (선택)</p>
+                                    <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100 min-h-[76px]">
+                                        <input type="file" id="logo-upload" className="sr-only" accept="image/*" onChange={handleLogoChange}/>
+                                        <label htmlFor="logo-upload" className="cursor-pointer flex-shrink-0 px-4 py-2 text-sm font-bold rounded-xl text-teal-700 bg-teal-100 hover:bg-teal-200 transition-colors shadow-sm">
+                                            {logoSrc ? '로고 변경하기' : '이미지 파일 선택'}
+                                        </label>
+                                        {logoSrc ? (
+                                            <div className="flex items-center gap-3 w-full justify-between pr-2">
+                                                <img src={logoSrc} alt="미리보기" className="h-10 max-w-[120px] object-contain rounded bg-white p-1 border border-slate-200 shadow-sm" />
+                                                <button onClick={() => setLogoSrc(null)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                                </button>
+                                            </div>
+                                        ) : <span className="text-sm text-slate-400 font-medium">선택된 파일 없음</span>}
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+
+                        {/* 파일 업로드 */}
+                        <Card title="데이터 원본 업로드" badgeText="DATA INPUT" theme="indigo"
+                            icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>}
+                        >
+                            <label htmlFor="file-upload" onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                                className={`transition-all duration-200 flex flex-col items-center justify-center px-6 py-10 border-2 border-dashed rounded-2xl cursor-pointer ${isDragging ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'}`}>
+                                <div className={`p-4 rounded-full mb-4 ${file ? 'bg-indigo-100 text-indigo-600' : 'bg-white shadow-sm text-slate-400'}`}>
+                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        {file ? <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /> : <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />}
+                                    </svg>
+                                </div>
+                                <div className="text-center">
+                                    {file ? (
+                                        <><p className="text-lg font-bold text-indigo-700">{file.name}</p><p className="text-sm text-indigo-500 mt-1">파일이 성공적으로 로드되었습니다.</p></>
                                     ) : (
-                                        <span className="text-sm text-slate-400 font-medium">선택된 파일 없음</span>
+                                        <><p className="text-base font-bold text-slate-700 mb-1">클릭하여 파일 선택 또는 여기로 드래그</p><p className="text-sm text-slate-500">CSV 또는 Excel 형식 (.csv, .xlsx)</p></>
                                     )}
                                 </div>
-                            </div>
+                                <input id="file-upload" type="file" className="sr-only" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
+                            </label>
                         </Card>
-                    </div>
 
-                    <Card title="데이터 원본 업로드" badgeText="DATA INPUT" icon={<UploadIcon/>} theme="indigo">
-                        <label
-                            htmlFor="file-upload"
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`transition-all duration-200 flex flex-col items-center justify-center px-6 py-10 border-2 border-dashed rounded-2xl cursor-pointer ${
-                                isDragging 
-                                ? 'border-indigo-400 bg-indigo-50/50' 
-                                : 'border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300'
-                            }`}
-                        >
-                            <div className={`p-4 rounded-full mb-4 ${file ? 'bg-indigo-100 text-indigo-600' : 'bg-white shadow-sm text-slate-400'}`}>
-                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    {file ? (
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    ) : (
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    )}
-                                </svg>
-                            </div>
-                            
-                            <div className="text-center">
-                                {file ? (
-                                    <>
-                                        <p className="text-lg font-bold text-indigo-700">{file.name}</p>
-                                        <p className="text-sm text-indigo-500 mt-1">파일이 성공적으로 로드되었습니다.</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-base font-bold text-slate-700 mb-1">클릭하여 파일 선택 또는 여기로 드래그</p>
-                                        <p className="text-sm text-slate-500">CSV 또는 Excel 형식 (.csv, .xlsx)</p>
-                                    </>
-                                )}
-                            </div>
-                            <input id="file-upload" type="file" className="sr-only" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
-                        </label>
-                    </Card>
-                  
-                    <div className="pt-8 pb-4 flex justify-center">
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isGenerateDisabled}
-                            className={`group relative flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full shadow-lg transition-all duration-300 w-full max-w-sm overflow-hidden ${
-                                isGenerateDisabled 
-                                ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-95'
-                            }`}
-                        >
-                            {!isGenerateDisabled && (
-                                <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                            )}
-                            
-                            {isLoading ? (
-                                <>
-                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    데이터 처리 중...
-                                </>
-                            ) : (
-                                <span>{generatedCsvContent ? '최신 정보로 다시 생성' : '시간표 생성'}</span>
-                            )}
-                        </button>
-                        
-                        <style dangerouslySetInnerHTML={{__html: `
-                            @keyframes shimmer {
-                                100% { transform: translateX(100%); }
-                            }
-                        `}} />
-                    </div>
-                  </div>
-              </div>
+                        {/* 슬롯 상세 정보 입력 */}
+                        {timeSlots.length > 0 && (
+                            <SlotConfigSection timeSlots={timeSlots} headerInputs={headerInputs} onChange={handleHeaderInputChange} hasSourceCodes={hasSourceCodes} hasSourceLocations={hasSourceLocations} />
+                        )}
 
-              {/* 결과 화면 영역: 한눈에 꽉 차게 보이도록 화면 너비(최대 1600px)를 사용합니다. */}
-              {filteredCsvRows && (
-                  <div id="result-section" className="w-full bg-slate-50/70 border-t border-slate-200 mt-4 pt-10 pb-20 px-2 sm:px-6 lg:px-8 print:bg-white print:border-none print:p-0 print:mt-0 print:pb-0">
-                      <div className="max-w-[1600px] mx-auto w-full print:max-w-none">
-                          
-                          <div className="print-hidden mb-6 flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 max-w-6xl mx-auto">
-                              <div className="w-full md:w-auto">
-                                {availableClasses.length > 1 ? (
-                                    <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto hide-scrollbar max-w-full">
-                                        {availableClasses.map(className => (
-                                            <button
-                                                key={className}
-                                                onClick={() => setSelectedClass(className)}
-                                                className={`whitespace-nowrap px-5 py-2 text-sm font-bold rounded-lg transition-all ${
-                                                    selectedClass === className
-                                                        ? 'bg-white text-blue-600 shadow-sm'
-                                                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                                                }`}
-                                            >
-                                                {className === 'all' ? '전체 보기' : `${className}반`}
+                        {/* 생성 버튼 */}
+                        <div className="pt-4 pb-4 flex justify-center">
+                            <button onClick={handleGenerate} disabled={isGenerateDisabled}
+                                className={`group relative flex items-center justify-center px-10 py-4 text-lg font-bold rounded-full shadow-lg transition-all duration-300 w-full max-w-sm overflow-hidden ${isGenerateDisabled ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-95'}`}>
+                                {!isGenerateDisabled && <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>}
+                                {isLoading ? (
+                                    <><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>데이터 처리 중...</>
+                                ) : <span>{hasResults ? '최신 정보로 다시 생성' : '시간표 생성'}</span>}
+                            </button>
+                            <style dangerouslySetInnerHTML={{__html: `@keyframes shimmer{100%{transform:translateX(100%);}}` }} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── 결과 영역 ── */}
+                {hasResults && (
+                    <div id="result-section" className="w-full bg-slate-50/70 border-t border-slate-200 mt-4 pt-8 pb-20 px-2 sm:px-6 lg:px-8 print:bg-white print:border-none print:p-0 print:mt-0 print:pb-0">
+                        <div className="max-w-[1600px] mx-auto w-full print:max-w-none">
+
+                            {/* 컨트롤 바 */}
+                            <div className="print-hidden mb-6 max-w-6xl mx-auto">
+                                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
+                                        {/* 뷰 모드 탭 */}
+                                        <div className="flex bg-slate-100 p-1 rounded-xl">
+                                            <button onClick={() => setViewMode('individual')}
+                                                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${viewMode === 'individual' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                개인별 카드
                                             </button>
-                                        ))}
+                                            <button onClick={() => setViewMode('grid')}
+                                                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18" /></svg>
+                                                통합 시간표
+                                            </button>
+                                        </div>
+
+                                        {/* 학급 필터 */}
+                                        {availableClasses.length > 1 && (
+                                            <div className="flex bg-slate-100 p-1 rounded-xl overflow-x-auto max-w-full">
+                                                {availableClasses.map(cn => (
+                                                    <button key={cn} onClick={() => setSelectedClass(cn)}
+                                                        className={`whitespace-nowrap px-4 py-2 text-sm font-bold rounded-lg transition-all ${selectedClass === cn ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}>
+                                                        {cn === 'all' ? '전체' : `${cn}반`}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                ) : (
-                                    <p className="text-slate-500 font-medium px-2">생성 완료된 시간표</p>
-                                )}
-                              </div>
-                              
-                              <button
-                                  onClick={handlePrint}
-                                  className="w-full md:w-auto flex items-center justify-center px-6 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors shadow-sm"
-                              >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                  </svg>
-                                  인쇄하기
-                              </button>
-                          </div>
 
-                          <div id="printable-section" className="w-full">
-                              <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-4 sm:p-8 print-card print:p-0">
-                                  <div className="relative mb-6 print-header-container border-b-2 border-slate-800 pb-4 print:border-b-2">
-                                      <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                                          {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 ${metadata.examType === 'midterm' ? '중간고사' : '기말고사'} 시간표`}
-                                      </h2>
-                                      {logoSrc && (
-                                          <img
-                                              src={logoSrc}
-                                              alt="School Logo"
-                                              className="absolute top-1/2 -translate-y-1/2 right-0 max-h-[40px] w-auto"
-                                          />
-                                      )}
-                                  </div>
+                                    {/* 인쇄 버튼 */}
+                                    <button onClick={viewMode === 'individual' ? handlePrintIndividual : handlePrint}
+                                        className="w-full md:w-auto flex items-center justify-center px-6 py-2.5 bg-slate-800 text-white text-sm font-bold rounded-xl hover:bg-slate-700 transition-colors shadow-sm gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                                        {viewMode === 'individual' ? '개인 카드 인쇄' : '통합 시간표 인쇄'}
+                                    </button>
+                                </div>
+                            </div>
 
-                                  <div id="print-area" className="w-full">
-                                      <TimetablePreviewTable data={filteredCsvRows} />
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
-              )}
+                            {/* ── 개인별 카드 뷰 ── */}
+                            {viewMode === 'individual' && filteredStudents && (
+                                <div className="px-2 max-w-6xl mx-auto">
+                                    {filteredStudents.length === 0 ? (
+                                        <div className="text-center py-16 text-slate-400 font-medium">해당 학급 학생 데이터가 없습니다.</div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-slate-500 mb-4 font-medium">
+                                                총 <span className="font-bold text-slate-700">{filteredStudents.length}명</span>의 개인별 시험 시간표 — 인쇄 시 A4 1장에 2명씩 출력됩니다.
+                                            </p>
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                                {filteredStudents.map(student => (
+                                                    <IndividualStudentCard key={student.studentId} student={student} metadata={metadata} logoSrc={logoSrc} />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ── 통합 시간표 뷰 ── */}
+                            {viewMode === 'grid' && filteredCsvRows && (
+                                <div id="printable-section" className="w-full">
+                                    <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-4 sm:p-8 print-card print:p-0">
+                                        <div className="relative mb-6 print-header-container border-b-2 border-slate-800 pb-4">
+                                            <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                                {`${metadata.year}학년도 ${metadata.semester}학기 ${metadata.grade}학년 ${metadata.examType === 'midterm' ? '중간고사' : '기말고사'} 시간표`}
+                                            </h2>
+                                            {logoSrc && <img src={logoSrc} alt="School Logo" className="absolute top-1/2 -translate-y-1/2 right-0 max-h-[40px] w-auto" />}
+                                        </div>
+                                        <div id="print-area" className="w-full">
+                                            <TimetablePreviewTable data={filteredCsvRows} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                )}
             </main>
-          </div>
-        );
-      };
+        </div>
+    );
+};
 
-      const rootElement = document.getElementById('root');
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(<App />);
-    </script>
+const rootElement = document.getElementById('root');
+const root = ReactDOM.createRoot(rootElement);
+root.render(<App />);
+</script>
 </body>
 </html>
