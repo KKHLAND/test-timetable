@@ -276,11 +276,11 @@ const buildIndividualPrintDoc = (students, meta, logo) => {
         </div>`).join('');
     return `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
     <title>개인별 시험 시간표</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
     <style>
         @page { size: A4 portrait; margin: 8mm; }
-        @font-face { font-family: 'Pretendard'; }
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
-        html, body { margin:0; padding:0; height:100%; background:white; font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; }
+        html, body { margin:0; padding:0; height:100%; background:white; font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif; }
         .card-page { height:100vh; display:flex; flex-direction:column; page-break-after:always; break-after:page; }
         .card-page:last-child { page-break-after:avoid; break-after:avoid; }
         .student-card { flex:1; display:flex; flex-direction:column; border:1px solid #cbd5e1; border-radius:5px; overflow:hidden; }
@@ -290,8 +290,8 @@ const buildIndividualPrintDoc = (students, meta, logo) => {
         .card-stu { background:#eff6ff; padding:10px 14px; display:flex; align-items:center; gap:20px; border-bottom:1.5px solid #bfdbfe; flex-shrink:0; }
         .stu-block { display:flex; align-items:center; gap:10px; }
         .stu-lbl { font-size:7pt; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.08em; }
-        .stu-id { font-size:14pt; font-weight:800; color:#0f172a; letter-spacing:0.12em; }
-        .stu-name { font-size:15pt; font-weight:800; color:#0f172a; }
+        .stu-id { font-size:14pt; font-weight:900; color:#0f172a; letter-spacing:0.12em; -webkit-text-stroke:0.3px #0f172a; }
+        .stu-name { font-size:15pt; font-weight:900; color:#0f172a; -webkit-text-stroke:0.3px #0f172a; }
         .vsep { width:1.5px; height:28px; background:#bfdbfe; flex-shrink:0; }
         .card-tbl { flex:1; overflow:hidden; }
         table { width:100%; border-collapse:collapse; height:100%; }
@@ -631,6 +631,13 @@ const App = () => {
             const sampleEntry = data.find(e => e.학번) || data[0];
             setHasSourceCodes('코드' in sampleEntry && String(sampleEntry['코드'] || '').trim() !== '');
             setHasSourceLocations('고사실' in sampleEntry && String(sampleEntry['고사실'] || '').trim() !== '');
+
+            // 학번 첫 자리로 학년 자동 감지
+            const sid = String(sampleEntry['학번'] || '').trim();
+            if (sid.length >= 1 && /^[1-6]/.test(sid)) {
+                const detectedGrade = sid.charAt(0);
+                setMetadata(prev => ({ ...prev, grade: detectedGrade }));
+            }
         }
     };
 
@@ -767,7 +774,7 @@ const App = () => {
         const html = buildIndividualPrintDoc(filteredStudents, metadata, logoSrc);
         printWindow.document.write(html);
         printWindow.document.close();
-        setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 1000);
+        setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 2000);
     };
 
     const hasResults = filteredCsvRows || filteredStudents;
