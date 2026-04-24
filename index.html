@@ -215,15 +215,14 @@ const generateIndividualStudentData = (parsedData, headerInputs) => {
 const buildStudentCardHtml = (student, meta, logo) => {
     const examLabel = meta.examType === 'midterm' ? '중간고사' : '기말고사';
     const rows = student.exams.map((exam, i) => {
-        const isNewDate = i > 0 && exam.date !== student.exams[i-1].date;
-        // 날짜가 바뀌는 행은 두꺼운 윗선으로 구분
-        const dateSepTop = isNewDate ? 'border-top:1.5px solid #b0bec5!important;' : '';
+        const isNewDate = i === 0 || exam.date !== student.exams[i-1].date;
+        const dateSepTop = (i > 0 && isNewDate) ? 'border-top:1.5px solid #b0bec5!important;' : '';
         const cellBase = `border:1px solid #e2e8f0;padding:7px 8px;text-align:center;vertical-align:middle;${dateSepTop}`;
         return `
         <tr style="background:${i%2===0?'#ffffff':'#f8fafc'}">
             <td style="${cellBase}">
-                <div style="font-weight:600;font-size:9pt;color:#0f172a;">${exam.date}</div>
-                ${exam.time ? `<div style="font-size:7.5pt;color:#64748b;margin-top:2px;">${exam.time}</div>` : ''}
+                ${isNewDate ? `<div style="font-weight:600;font-size:9pt;color:#0f172a;">${exam.date}</div>` : ''}
+                ${isNewDate && exam.time ? `<div style="font-size:7.5pt;color:#64748b;margin-top:2px;">${exam.time}</div>` : ''}
             </td>
             <td style="${cellBase}font-weight:700;font-size:9.5pt;color:#1e3a8a;">${exam.period}교시</td>
             <td style="${cellBase}font-weight:600;font-size:9.5pt;color:#0f172a;">${exam.subject}</td>
@@ -466,13 +465,13 @@ const IndividualStudentCard = ({ student, metadata, logoSrc }) => {
                     </thead>
                     <tbody>
                         {student.exams.map((exam, idx) => {
-                            const isNewDate = idx > 0 && exam.date !== student.exams[idx-1].date;
-                            const sepStyle = isNewDate ? { borderTop: '1.5px solid #b0bec5' } : {};
+                            const isNewDate = idx === 0 || exam.date !== student.exams[idx-1].date;
+                            const sepStyle = (idx > 0 && isNewDate) ? { borderTop: '1.5px solid #b0bec5' } : {};
                             return (
                                 <tr key={idx}>
                                     <td className="py-2 px-2 text-center" style={sepStyle}>
-                                        <div className="font-semibold text-slate-800 text-xs">{exam.date}</div>
-                                        {exam.time && <div className="text-slate-500 text-[10px] mt-0.5">{exam.time}</div>}
+                                        {isNewDate && <div className="font-semibold text-slate-800 text-xs">{exam.date}</div>}
+                                        {isNewDate && exam.time && <div className="text-slate-500 text-[10px] mt-0.5">{exam.time}</div>}
                                     </td>
                                     <td className="py-2 px-2 text-center font-bold text-blue-800 text-xs" style={sepStyle}>{exam.period}교시</td>
                                     <td className="py-2 px-2 text-center font-semibold text-slate-800 text-xs break-keep" style={sepStyle}>{exam.subject}</td>
