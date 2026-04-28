@@ -221,14 +221,14 @@ const buildStudentCardHtml = (student, meta, logo) => {
         return `
         <tr style="background:${i%2===0?'#ffffff':'#f8fafc'}">
             <td style="${cellBase}">
-                ${isNewDate ? `<div style="font-weight:600;font-size:9pt;color:#0f172a;">${exam.date}</div>` : ''}
-                ${isNewDate && exam.time ? `<div style="font-size:7.5pt;color:#64748b;margin-top:2px;">${exam.time}</div>` : ''}
+                ${isNewDate ? `<div style="font-weight:600;font-size:10pt;color:#0f172a;">${exam.date}</div>` : ''}
+                ${isNewDate && exam.time ? `<div style="font-size:8.5pt;color:#64748b;margin-top:2px;">${exam.time}</div>` : ''}
             </td>
-            <td style="${cellBase}font-weight:700;font-size:9.5pt;color:#1e3a8a;">${exam.period}교시</td>
-            <td style="${cellBase}font-weight:600;font-size:9.5pt;color:#0f172a;">${exam.subject}</td>
-            <td style="${cellBase}font-size:9pt;color:#475569;">${exam.code||''}</td>
-            <td style="${cellBase}font-weight:500;font-size:9pt;color:#1e293b;">${exam.location||''}</td>
-            <td style="${cellBase}font-size:9pt;color:#64748b;">${exam.notes||''}</td>
+            <td style="${cellBase}font-weight:700;font-size:10.5pt;color:#1e3a8a;">${exam.period}교시</td>
+            <td style="${cellBase}font-weight:600;font-size:10.5pt;color:#0f172a;">${exam.subject}</td>
+            <td style="${cellBase}font-size:10pt;color:#475569;">${exam.code||''}</td>
+            <td style="${cellBase}font-weight:500;font-size:10pt;color:#1e293b;">${exam.location||''}</td>
+            <td style="${cellBase}font-size:10pt;color:#64748b;">${exam.notes||''}</td>
         </tr>`;
     }).join('');
     return `<div class="student-card">
@@ -285,18 +285,18 @@ const buildIndividualPrintDoc = (students, meta, logo) => {
         .card-page:last-child { page-break-after:avoid; break-after:avoid; }
         .student-card { flex:1; display:flex; flex-direction:column; border:1px solid #cbd5e1; border-radius:5px; overflow:hidden; }
         .card-hdr { background:linear-gradient(135deg,#0c1b3e 0%,#045994 100%); padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-        .card-yr { color:#93c5fd; font-size:7.5pt; margin-bottom:2px; }
-        .card-title { color:white; font-weight:700; font-size:12pt; }
+        .card-yr { color:#93c5fd; font-size:9.5pt; margin-bottom:2px; }
+        .card-title { color:white; font-weight:700; font-size:14pt; }
         .card-stu { background:#eff6ff; padding:10px 14px; display:flex; align-items:center; gap:20px; border-bottom:1.5px solid #bfdbfe; flex-shrink:0; }
         .stu-block { display:flex; align-items:center; gap:10px; }
-        .stu-lbl { font-size:7pt; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.08em; }
-        .stu-id { font-size:14pt; font-weight:900; color:#0f172a; letter-spacing:0.12em; -webkit-text-stroke:0.3px #0f172a; }
-        .stu-name { font-size:15pt; font-weight:900; color:#0f172a; -webkit-text-stroke:0.3px #0f172a; }
+        .stu-lbl { font-size:8pt; font-weight:800; color:#2563eb; text-transform:uppercase; letter-spacing:0.08em; }
+        .stu-id { font-size:15pt; font-weight:900; color:#0f172a; letter-spacing:0.12em; -webkit-text-stroke:0.3px #0f172a; }
+        .stu-name { font-size:16pt; font-weight:900; color:#0f172a; -webkit-text-stroke:0.3px #0f172a; }
         .vsep { width:1.5px; height:28px; background:#bfdbfe; flex-shrink:0; }
         .card-tbl { flex:1; overflow:hidden; }
         table { width:100%; border-collapse:collapse; height:100%; }
         thead tr { background:#f1f5f9; }
-        th { border:1px solid #e2e8f0; border-bottom:1.5px solid #b0bec5; padding:7px 6px; text-align:center; font-size:9pt; font-weight:700; color:#475569; }
+        th { border:1px solid #e2e8f0; border-bottom:1.5px solid #b0bec5; padding:7px 6px; text-align:center; font-size:10pt; font-weight:700; color:#475569; }
         td { border:1px solid #e2e8f0; vertical-align:middle; }
         .cut-sep { height:8mm; flex-shrink:0; display:flex; align-items:center; gap:3mm; }
         .cut-line { flex:1; border-top:1.5px dashed #94a3b8; }
