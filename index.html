@@ -237,7 +237,6 @@ const buildStudentCardHtml = (student, meta, logo) => {
                 <div class="card-yr">${meta.year}학년도 ${meta.semester}학기</div>
                 <div class="card-title">${meta.grade}학년 ${examLabel} 개인별 시험 시간표</div>
             </div>
-            ${logo ? `<img src="${logo}" style="height:26px;object-fit:contain;opacity:0.92;flex-shrink:0;" />` : ''}
         </div>
         <div class="card-stu">
             <div class="stu-block">
@@ -249,6 +248,7 @@ const buildStudentCardHtml = (student, meta, logo) => {
                 <span class="stu-lbl">성명</span>
                 <span class="stu-name">${student.name}</span>
             </div>
+            ${logo ? `<div style="margin-left:auto;"><img src="${logo}" style="height:32px;object-fit:contain;opacity:0.92;" /></div>` : ''}
         </div>
         <div class="card-tbl">
             <table>
@@ -436,7 +436,6 @@ const IndividualStudentCard = ({ student, metadata, logoSrc }) => {
                     <p className="text-blue-300 text-xs font-medium mb-0.5">{metadata.year}학년도 {metadata.semester}학기</p>
                     <p className="text-white font-bold text-sm leading-tight">{metadata.grade}학년 {examLabel} 개인별 시험 시간표</p>
                 </div>
-                {logoSrc && <img src={logoSrc} alt="logo" className="h-7 object-contain opacity-90 flex-shrink-0 ml-3" />}
             </div>
             {/* 학생 정보 */}
             <div className="ic-student-info">
@@ -449,6 +448,7 @@ const IndividualStudentCard = ({ student, metadata, logoSrc }) => {
                     <span className="text-[10px] font-black text-blue-500 tracking-widest uppercase">성명</span>
                     <span className="font-black text-slate-800 text-lg">{student.name}</span>
                 </div>
+                {logoSrc && <div className="ml-auto"><img src={logoSrc} alt="logo" className="h-8 object-contain opacity-90" /></div>}
             </div>
             {/* 테이블 */}
             <div className="ic-table-wrap">
