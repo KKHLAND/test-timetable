@@ -55,6 +55,7 @@
         .dark .gbe-util-btn { background: #122a52; border-color: #244a86; color: #9fc0ec; }
         .dark .gbe-util-btn:hover { background: #1a3a6e; color: #fff; }
         .dark .gbe-footer { background: #0a1730 !important; border-top-color: #1d3563 !important; color: #7f9ec9 !important; }
+        .dark .seoul-logo { background: #fff; border-radius: 10px; padding: 5px 10px; }
 
         /* ── 통합 시간표 인쇄 ── */
         @media print {
@@ -596,22 +597,11 @@ const TimetablePreviewTable = ({ data }) => {
 };
 
 
-// ── 서울특별시교육청 로고 ──
+// ── 서울특별시교육청 로고 (공식 이미지) ──
 const SeoulLogo = () => (
-    <div className="flex items-center gap-2.5 flex-shrink-0">
-        <svg width="40" height="40" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <g stroke="#0072bc" strokeWidth="11" strokeLinejoin="round" fill="none">
-                <path d="M60 54 C 42 66 42 92 60 100 C 78 92 78 66 60 54 Z" />
-                <path d="M60 54 C 42 66 42 92 60 100 C 78 92 78 66 60 54 Z" transform="rotate(120 60 54)" />
-                <path d="M60 54 C 42 66 42 92 60 100 C 78 92 78 66 60 54 Z" transform="rotate(240 60 54)" />
-            </g>
-            <circle cx="60" cy="28" r="8.5" fill="#00a651" />
-        </svg>
-        <div className="leading-tight">
-            <div className="gbe-brand-text text-[18px] font-extrabold text-[#1a1a1a] tracking-tight">서울특별시교육청</div>
-            <div className="gbe-brand-sub text-[8px] font-bold text-[#333] tracking-wide -mt-0.5">SEOUL METROPOLITAN OFFICE OF EDUCATION</div>
-        </div>
-    </div>
+    <a href="https://www.sen.go.kr/sen/index.do" target="_blank" rel="noopener noreferrer" className="seoul-logo flex items-center flex-shrink-0" aria-label="서울특별시교육청">
+        <img src="seoul-logo.png" alt="서울특별시교육청" className="h-9 w-auto" />
+    </a>
 );
 
 // ── 포털 상단 헤더 ──
