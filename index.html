@@ -10,6 +10,13 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script>
+        // Babel 8부터 JSX 기본값이 automatic 런타임으로 바뀌어 변환 결과에
+        // `import "react/jsx-runtime"`가 삽입됨 → classic 런타임을 강제해 import 삽입을 막는다.
+        Babel.registerPreset('react-classic', {
+            presets: [[Babel.availablePresets.react, { runtime: 'classic' }]]
+        });
+    </script>
 
     <script>
         tailwind.config = {
@@ -118,7 +125,7 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 <div id="root" class="flex-grow flex flex-col"></div>
 
-<script type="text/babel">
+<script type="text/babel" data-presets="react-classic">
 const { useState, useCallback, useMemo, useEffect, Fragment } = React;
 
 // ==========================================
